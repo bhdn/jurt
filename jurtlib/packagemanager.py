@@ -164,14 +164,17 @@ class URPMIPackageManager(PackageManager):
             rootspool = root.make_spool_reachable(spool)
         outputlogger = logstore.get_output_handler("addmedia")
         try:
-            if spool is not None and spool.package_count():
-                args = ["build-spool", rootspool.in_root_path()]
-                root.su().run_package_manager("urpmi.addmedia", args,
-                        outputlogger=outputlogger)
-        finally:
-            outputlogger.close()
-            if spool:
-                rootspool.destroy()
+            try:
+                if spool is not None and spool.package_count():
+                    args = ["build-spool", rootspool.in_root_path()]
+                    root.su().run_package_manager("urpmi.addmedia", args,
+                            outputlogger=outputlogger)
+            finally:
+                outputlogger.close()
+                if spool:
+                    rootspool.destroy()
+        except su.CommandError, e:
+
 
     def install_build_deps(self, srcpkgpath, root, repos, logstore, spool):
         args = self.urpmiopts[:]
@@ -180,11 +183,16 @@ class URPMIPackageManager(PackageManager):
         rootspool = root.make_spool_reachable(spool)
         outputlogger = logstore.get_output_handler("build-deps-install")
         try:
-            root.su().run_package_manager("urpmi", args,
-                    outputlogger=outputlogger)
-        finally:
-            outputlogger.close()
-            rootspool.destroy()
+            try:
+                root.su().run_package_manager("urpmi", args,
+                        outputlogger=outputlogger)
+            finally:
+                outputlogger.close()
+                rootspool.destroy()
+        except su.CommandError, e:
+            raise PackageManagerError, ("failed to install build "
+                    "dependencies, see the logs at %s" %
+                    (outputlogger.location()))
 
     def install(self, packages, root, repos, logstore, logname=None):
         args = self.urpmiopts[:]
