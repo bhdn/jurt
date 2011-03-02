@@ -1,0 +1,13 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand
+from jurtlib.facade import JurtFacade
+
+class Showrc(JurtCommand):
+
+    descr = "Dumps configuration values"
+
+    def run(self):
+        for status in self.jurt.check_permissions():
+            print status
+
+Showrc().main()

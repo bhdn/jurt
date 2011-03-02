@@ -1,0 +1,55 @@
+#!/usr/bin/python
+import os
+from jurtlib.command import JurtCommand, CliError
+from jurtlib import cmd
+
+DESCR = """\
+Helper for initial configuration.
+
+Currently it only sets up sudoers configuration.
+"""
+
+# TODO ask for base url and try to discover distributions and automatically
+# populate targets using it
+
+SUDOERS_LINE = "%(target)s ALL=(ALL) NOPASSWD: %(command)s\n"
+JURT_COMMAND = "/usr/sbin/jurt-root-command"
+
+class Showrc(JurtCommand):
+
+    descr = ""
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("--user", "-u", default=None,
+                help="allow USER to use jurt")
+
+    def run(self):
+        if os.geteuid() != 0:
+            raise CliError, "you must invoke this program as root "\
+                    "(see --help)"
+        target = None
+        if not os.path.exists(JURT_COMMAND):
+            raise CliError, ("%s does not exist, check if jurt is "
+                    "properly installed" % (JURT_COMMAND))
+        path = self.config.root.sudoers
+        group = self.config.root.jurt_group
+        target = "%" + group
+        env = {"target": target, "command": JURT_COMMAND}
+        newline = SUDOERS_LINE % env
+        f = open(path)
+        contents = f.readlines()
+        f.close()
+        if not newline in contents:
+            print "added to %s: %s" % (path, newline)
+            f = open(path, "a")
+            f.write("\n")
+            f.write(newline)
+            f.close()
+        if self.opts.user:
+            print "adding %s to group %s" % (self.opts.user, group)
+            cmd.run(["/usr/sbin/usermod", "-aG", group, self.opts.user])
+        print "done. just be sure you are effective member of the group "\
+		"%s before running jurt commands" % (group)
+
+Showrc().main()

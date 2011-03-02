@@ -1,0 +1,32 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand, CliError
+
+DESCR = """Builds a set of packages
+
+To list the targets, use jurt-list-targets.
+
+To see the configuration used by jurt, use jurt-showrc.
+
+Also, jurt-root-command should be able to use sudo for running commands as
+root. Run jurt-test-sudo for checking whether it is properly configured.
+"""
+
+class Build(JurtCommand):
+
+    usage = "%prog -t TARGET file.src.rpm..."
+    descr = DESCR
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-t", "--target", type="string",
+                help="Target packages are built for")
+        parser.add_option("-b", "--stop", default=None, metavar="STAGE",
+                help="Stop at build stage STAGE and drops into a shell")
+
+    def run(self):
+        if not self.args:
+            raise CliError, "no source packages provided (--help?)"
+        self.jurt.check_permissions(interactive=False)
+        self.jurt.build(self.args, self.opts.target, stage=self.opts.stop)
+
+Build().main()

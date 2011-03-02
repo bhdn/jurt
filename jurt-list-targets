@@ -1,0 +1,12 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand
+
+class ListTargets(JurtCommand):
+
+    descr = "List all build targets"
+
+    def run(self):
+        for target in self.jurt.target_names():
+            print target
+
+ListTargets().main()

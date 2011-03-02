@@ -1,0 +1,17 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand, CliError
+
+class Shell(JurtCommand):
+
+    descr = "Creates a root and drops into a shell"
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-t", "--target", type="string",
+                help="Target rooot name (jurt-list-targets for a list)")
+
+    def run(self):
+        self.jurt.check_permissions(interactive=False)
+        self.jurt.shell(self.opts.target)
+
+Shell().main()

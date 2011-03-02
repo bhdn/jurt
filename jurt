@@ -1,0 +1,28 @@
+#!/usr/bin/python
+import sys
+import os
+
+def usage():
+    print """
+jurt
+
+See jurt-<tab>.
+"""
+
+def main():
+    if len(sys.argv) < 2:
+        usage()
+    else:
+        dir = os.path.dirname(__file__)
+        name = "jurt-" + sys.argv[1]
+        prog = os.path.join(dir, name)
+        if os.path.exists(prog):
+            args = [name] + sys.argv[2:]
+            os.execv(prog, args)
+        else:
+            usage()
+
+if __name__ == "__main__":
+    main()
+
+# vim:ts=4:sw=4:et

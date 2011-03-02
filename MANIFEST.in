@@ -1,0 +1,2 @@
+recursive-include jurtlib/ *.py
+include README jurt.conf

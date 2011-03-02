@@ -1,0 +1,355 @@
+#!/usr/bin/python
+import sys
+import os
+import shlex
+import subprocess
+from jurtlib.command import JurtCommand, CliError
+from jurtlib.template import template_expand
+
+MOUNT_TYPES = {
+        "proc": ("proc", "jurt-mounted-proc-for-you", "/proc"),
+        "sys": ("sysfs", "jurt-mounted-sys-for-you", "/sys"),
+        "pts": ("devpts", "jurt-kindly-mounted-pts-for-you", "/dev/pts")}
+
+class RootCommand(JurtCommand):
+
+    descr = "Runs a command privilleged user"
+    usage = "%prog -t TYPE [options]"
+
+    def init_parser(self, parser):
+        super(RootCommand, self).init_parser(parser)
+        parser.add_option("-t", "--type", default=None,
+                help="Type of command to be run")
+        parser.add_option("--pm", default=None,
+                help="Package manager type used")
+        parser.add_option("--target", default=None,
+                help="Target name used (if applicable)")
+        parser.add_option("--dry-run", default=False, action="store_true",
+                help="Don't execute anything")
+        parser.add_option("--root", type="string", default=None,
+                help="execute inside chroot")
+        parser.add_option("--arch", type="string", default=None,
+                help="set the arch used by --root")
+        parser.add_option("--run-as", type="string", default=None,
+                metavar="USER", help="Become USER (after chroot)")
+        parser.add_option("-u", "--uid", type="string", default=None,
+                help="set UID used")
+        parser.add_option("-g", "--gid", type="string", default=None,
+                help="set GID used")
+        parser.add_option("-m", "--mode", type="string", default=None,
+                help="Destination file mode")
+        parser.add_option("--timeout", type="int", default=None,
+                help="Command execution timeout")
+        parser.add_option("--ignore-errors", default=False,
+                action="store_true",
+                help="Command execution timeout")
+
+    def config_files(self, config):
+        return [config.conf.system_file]
+
+    def run(self):
+        if self.opts.type is None:
+            raise CliError, "the argument -t/--type is mandatory"
+        elif self.opts.type == "test":
+            self.test()
+        elif self.opts.type == "runpm":
+            if self.opts.pm is None:
+                raise CliError, "the option --pm is mandatory"
+            self.runpm()
+        elif self.opts.type == "mkdir":
+            self.mkdir()
+        elif self.opts.type == "adduser":
+            self.adduser()
+        elif self.opts.type == "copy":
+            self.copy()
+        elif self.opts.type == "copyout":
+            self.copyout()
+        elif self.opts.type == "cheapcopy":
+            self.cheapcopy()
+        elif self.opts.type == "run":
+            self.runcmd()
+        elif self.opts.type == "mount":
+            self.mount()
+        elif self.opts.type == "umount":
+            self.umount()
+        elif self.opts.type == "rootcompress":
+            self.rootcompress()
+        elif self.opts.type == "rootdecompress":
+            self.rootdecompress()
+        elif self.opts.type == "postcommand":
+            self.postcommand()
+        elif self.opts.type == "interactive-shell":
+            self.interactiveshell()
+        elif self.opts.type == "interactive-prepare":
+            self.interactiveprepare()
+        else:
+            raise CliError, "invalid operation type: %s" % self.opts.type
+
+    def _requires_target(f):
+        def w(self):
+            if self.opts.target is None:
+                raise CliError, "--target is mandatory for this --type"
+            try:
+                target = self.jurt.targets[self.opts.target]
+            except KeyError:
+                raise CliError, "invalid target: %s" % (self.opts.target)
+            self.target = target
+            return f(self)
+        return w
+
+    def _requires_root(f):
+        def w(self):
+            if not self.opts.root:
+                raise CliError, "--root is required for this command"
+            return f(self)
+        return w
+
+    def _exec(self, args, exit=True, error=True, interactive=False):
+        allcmd = []
+        if self.opts.timeout is not None:
+            allcmd.extend(("timeout", str(self.opts.timeout)))
+        if self.opts.root:
+            if self.opts.arch:
+                sysarch = self.target.packagemanager.system_arch()
+                if self.opts.arch != sysarch:
+                    allcmd.extend(self.target.rootmanager.setarch_command(sysarch,
+                        self.opts.arch))
+            self.target.rootmanager.check_valid_subdir(self.opts.root)
+            allcmd.extend(shlex.split(self.config.root.chroot_command))
+            allcmd.append(self.opts.root)
+        if self.opts.run_as:
+            allcmd.extend(shlex.split(self.config.root.su_command))
+            allcmd.append(self.opts.run_as)
+            allcmd.append("-c")
+            allcmd.append(subprocess.list2cmdline(args)) # blarg
+        else:
+            allcmd.extend(args)
+        cmdline = subprocess.list2cmdline(allcmd)
+        if not interactive:
+            sys.stderr.write(">>>>>> running: %s\n" % (cmdline))
+            sys.stderr.flush()
+        if not self.opts.dry_run:
+            p = subprocess.Popen(args=allcmd, shell=False)
+            p.wait()
+            if not self.opts.ignore_errors:
+                if p.returncode != 0:
+                    msg = ("command failed with %d (output above "
+                            "^^^^^^^^^^)\n" % p.returncode)
+                    if exit:
+                        raise CliError, msg
+                    else:
+                        if error:
+                            sys.stderr.write(msg + "\n")
+                        sys.exit(p.returncode)
+
+    @_requires_target
+    def runpm(self):
+        self.target.packagemanager.validate_cmd_args(self.opts.pm, self.args)
+        self._exec(self.target.packagemanager.cmd_args(self.opts.pm, self.args))
+
+    def _install_cmd(self, dir=False):
+        cmd = [self.config.root.install_command]
+        if dir:
+            cmd.append("-d")
+        if self.opts.uid:
+            cmd.extend(("-o", self.opts.uid))
+        if self.opts.gid:
+            cmd.extend(("-g", self.opts.gid))
+        if self.opts.mode:
+            cmd.extend(("-m", self.opts.mode))
+        return cmd
+
+    @_requires_target
+    def adduser(self):
+        if not self.args:
+            raise CliError, "you must provide an username"
+        cmd = shlex.split(self.config.root.adduser_command)
+        cmd.extend(("-u", self.opts.uid))
+        cmd.append(self.args[0])
+        if not self.opts.dry_run:
+            self._exec(cmd)
+
+    @_requires_target
+    def copy(self):
+        if len(self.args) < 2:
+            raise CliError, "copy requires two operands"
+        source = self.args[0]
+        dest = self.args[1]
+        self.target.rootmanager.check_valid_subdir(dest)
+        cmd = self._install_cmd()
+        cmd.append(source)
+        cmd.append(dest)
+        if not self.opts.dry_run:
+            self._exec(cmd)
+
+    @_requires_target
+    def copyout(self):
+        if len(self.args) < 2:
+            raise CliError, "copy requires two operands"
+        source = self.args[0]
+        dest = self.args[1]
+        self.target.rootmanager.check_valid_subdir(source)
+        self.target.rootmanager.check_valid_outdir(dest)
+        cmd = self._install_cmd()
+        cmd.append(source)
+        cmd.append(dest)
+        if not self.opts.dry_run:
+            self._exec(cmd)
+
+    @_requires_target
+    def cheapcopy(self):
+        if len(self.args) < 2:
+            raise CliError, "copy requires two operands"
+        source = self.args[0]
+        dest = self.args[1]
+        self.target.rootmanager.check_valid_subdir(dest)
+        cmd = ["cp", "-al", source, dest]
+        if not self.opts.dry_run:
+            self._exec(cmd)
+
+    @_requires_target
+    def mkdir(self):
+        for arg in self.args:
+            self.target.rootmanager.check_valid_subdir(arg)
+            cmd = self._install_cmd(dir=True)
+            cmd.append(arg)
+            if not self.opts.dry_run:
+                self._exec(cmd)
+
+    def _check_build_user(self, username):
+        # checks whether the user being used inside the chroot is the one
+        # set in configuration, if not, then it must be some user that is
+        # member of the jurt group
+        import grp
+        sysbuilder = self.target.builder.build_user_info()[0]
+        if username != sysbuilder:
+            groupname = self.config.root.jurt_group
+            try:
+                group = grp.getgrnam(groupname)
+            except KeyError:
+                raise CliError, ("the group %s does not exist, cannot check "
+                        "--run-as" % (groupname))
+            if username not in group.gr_mem:
+                raise CliError, ("the user %s is not a member of the group "
+                        "%s" % (username, groupname))
+
+    @_requires_target
+    @_requires_root
+    def runcmd(self):
+        if not self.opts.run_as:
+            raise CliError, "--run-as is required for run"
+        self._check_build_user(self.opts.run_as)
+        if not self.opts.dry_run:
+            self._exec(self.args)
+
+    def _mount_info(self):
+        if not self.args:
+            raise CliError, "you must provide a mount type"
+        typename = self.args[0]
+        try:
+            mountinfo = MOUNT_TYPES[typename]
+        except KeyError:
+            raise CliError, "invalid mount type: %s" % (typename)
+        return mountinfo
+
+    @_requires_target
+    @_requires_root
+    def mount(self):
+        fsname, devpath, mountpoint = self._mount_info()
+        args = ["mount", "-t", fsname, devpath, mountpoint]
+        if not self.opts.dry_run:
+            self._exec(args)
+
+    @_requires_target
+    @_requires_root
+    def umount(self):
+        _, _, mountpoint = self._mount_info()
+        args = ["umount", mountpoint]
+        if not self.opts.dry_run:
+            self._exec(args)
+
+    def _tmp_cachepath(self, cachepath):
+        import tempfile
+        base = os.path.dirname(cachepath)
+        prefix = os.path.basename(cachepath) + "."
+        return tempfile.mktemp(dir=base, prefix=prefix)
+
+    def _comp_decomp(self, comp=False):
+        if not self.args:
+            raise CliError, "a root path is mandatory"
+        root = self.args[0]
+        file = self.args[1]
+        self.target.rootmanager.check_valid_subdir(root)
+        try:
+            if comp:
+                fun = self.target.rootmanager.root_compress_command
+            else:
+                fun = self.target.rootmanager.root_decompress_command
+        except AttributeError:
+            raise CliError, "this target doesn't support using compressed root"
+        if comp:
+            tmpname = self._tmp_cachepath(file)
+        else:
+            tmpname = file
+        args = fun(root, tmpname)
+        if not self.opts.dry_run:
+            self._exec(args, exit=False)
+            if comp:
+                os.rename(tmpname, file)
+
+    @_requires_target
+    def rootcompress(self):
+        self._comp_decomp(True)
+
+    @_requires_target
+    def rootdecompress(self):
+        self._comp_decomp(False)
+
+    @_requires_target
+    @_requires_root
+    def postcommand(self):
+        args = shlex.split(self.config.root.su_for_post_command)
+        args.append(self.target.rootmanager.post_command())
+        if not self.opts.dry_run:
+            self._exec(args)
+
+    @_requires_target
+    @_requires_root
+    def interactiveshell(self):
+        if not self.args:
+            raise CliError, "username is mandatory in args"
+        if not self.target.rootmanager.allows_interactive_shell():
+            raise CliError, "interactive configuration not allowed "\
+                    "for this target"
+        args = shlex.split(self.config.root.sudo_shell_command)
+        args.extend(("-u", self.args[0]))
+        rawcmd = self.config.root.interactive_shell_command
+        env = {"target": self.target.name, "root": self.opts.root}
+        cmdline = template_expand(rawcmd, env)
+        args.extend(shlex.split(cmdline))
+        if not self.opts.dry_run:
+            self._exec(args, error=False, interactive=True)
+
+    @_requires_target
+    @_requires_root
+    def interactiveprepare(self):
+        if not self.args:
+            raise CliError, "username is mandatory in args"
+        user = self.args[0]
+        allowedcmds = self.target.packagemanager.allowed_pm_commands()
+        cmdsline = ",".join(allowedcmds)
+        rawline = self.config.root.sudo_pm_allow_format
+        env = {"user": user, "commands": cmdsline}
+        sudoline = template_expand(rawline, env)
+        sudoerspath = os.path.abspath(self.opts.root+ "/" +
+                self.config.root.sudoers)
+        f = open(sudoerspath, "a")
+        f.write(sudoline + "\n")
+        f.close()
+
+    def test(self):
+        if os.geteuid() != 0:
+            sys.stderr.write("error: i am not root\n")
+            sys.exit(1)
+
+RootCommand().main()

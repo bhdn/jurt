@@ -1,0 +1,11 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand
+
+class Showrc(JurtCommand):
+
+    descr = "Dumps configuration values"
+
+    def run(self):
+        print repr(self.config)
+
+Showrc().main()
