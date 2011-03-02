@@ -33,7 +33,7 @@ class PermissionChecker:
         uname, uid = su.my_username()
         if uname not in group.gr_mem:
             raise PermissionError, ("your user %s should be member of the "
-                    "%s group in order to jurt work. Did you run "
+                    "%s group in order to jurt work. Did you run (as root) "
                     "jurt-setup -u %s ?" % (uname, grname, uname))
         if group.gr_gid not in os.getgroups():
             raise PermissionError, ("your user is NOT effectively running as a "
