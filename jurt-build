@@ -26,7 +26,6 @@ class Build(JurtCommand):
     def run(self):
         if not self.args:
             raise CliError, "no source packages provided (--help?)"
-        self.jurt.check_permissions(interactive=False)
         self.jurt.build(self.args, self.opts.target, stage=self.opts.stop)
 
 Build().main()

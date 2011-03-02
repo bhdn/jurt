@@ -20,6 +20,7 @@ class JurtFacade:
         except KeyError:
             #FIXME use BuildError
             raise Error, "no such target: %s" % (name)
+        target.check_permissions(False)
         return target
 
     def build(self, paths, targetname=None, id=None, stage=None):
