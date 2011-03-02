@@ -2,9 +2,10 @@ import os
 import shlex
 import subprocess
 import logging
-from jurtlib import Error
+import time
+from jurtlib import Error, util
 from jurtlib.registry import Registry
-from jurtlib.su import SuChrootWrapper
+from jurtlib.su import SuChrootWrapper, my_username
 from jurtlib.config import parse_bool
 
 logger = logging.getLogger("jurt.root")
@@ -242,6 +243,13 @@ class ChrootRootManager(RootManager):
             arch = self.arch
         return arch
 
+    def _update_latest_link(self, rootpath):
+        username, _ = my_username()
+        linkname = username + "-latest"
+        linkpath = self.path_from_name(linkname)
+        rootname = os.path.basename(rootpath)
+        util.replace_link(linkpath, rootname)
+
     def create_new(self, name, packagemanager, repos, logger):
         path = self.path_from_name(name)
         self.su().mkdir(path)
@@ -250,6 +258,7 @@ class ChrootRootManager(RootManager):
         chroot = Chroot(self, path, arch)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
+        self._update_latest_link(path)
         return chroot
 
     def test_sudo(self, interactive=True):
@@ -326,6 +335,7 @@ class CompressedChrootManager(ChrootRootManager):
             chroot = Chroot(self, path, self._root_arch(packagemanager))
             logger.debug("decompressing %s into %s" % (cachepath, path))
             self.suwrapper.decompress_root(cachepath, path)
+            self._update_latest_link(path)
         return chroot
 
     # run as root

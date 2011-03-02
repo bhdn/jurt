@@ -5,7 +5,7 @@ import logging
 import subprocess
 import shlex
 import shutil
-from jurtlib import CommandError
+from jurtlib import CommandError, util
 from jurtlib.registry import Registry
 from jurtlib.config import parse_bool
 from jurtlib.spool import Spool
@@ -212,19 +212,7 @@ class Builder:
                     logger.debug("copying %s to %s" % (path, destpath))
                     shutil.copy(path, destpath)
         # creating a symlink pointing to the most recently delivered build
-        if os.path.lexists(latestpath):
-            if not os.path.islink(latestpath):
-                newname = latestpath + "." + str(int(time.time()))
-                logger.warn("%s already exists and it is not a symlink "
-                        "as expected, renaming it to %s" % (latestpath,
-                            newname))
-                os.move(latestpath, newname)
-            else:
-                logger.debug("removing existing link %s" % (latestpath))
-                os.unlink(latestpath)
-        logger.debug("creating link %s pointing to %s" % (latestpath,
-            topdir))
-        os.symlink(id, latestpath)
+        util.replace_link(latestpath, id)
         logger.info("done. check out %s" % (topdir))
 
     def build(self, id, paths, logstore, stage=None):
