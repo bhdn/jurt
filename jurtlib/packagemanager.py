@@ -178,6 +178,7 @@ class URPMIPackageManager(PackageManager):
 
     def install_build_deps(self, srcpkgpath, root, repos, logstore, spool):
         args = self.urpmiopts[:]
+        args.append("--auto")
         args.append("--buildrequires")
         args.append(srcpkgpath)
         rootspool = root.make_spool_reachable(spool)
