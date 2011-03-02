@@ -34,9 +34,9 @@ class JurtFacade:
     def target_names(self):
         return self.targets.keys()
 
-    def shell(self, targetname=None, id=None):
+    def shell(self, targetname=None, latest=False, id=None):
         target = self._get_target(targetname)
-        target.shell(id)
+        target.shell(id, latest=latest)
 
     def check_permissions(self, interactive=True):
         if not self.targets:

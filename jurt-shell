@@ -9,8 +9,17 @@ class Shell(JurtCommand):
         JurtCommand.init_parser(self, parser)
         parser.add_option("-t", "--target", type="string",
                 help="Target rooot name (jurt-list-targets for a list)")
+        parser.add_option("-i", "--id", default=None,
+                help=("Enter in an (supposedly) existing root named "
+                    "ID (see -l)"))
+        parser.add_option("-l", "--latest", default=False,
+                action="store_true",
+                help="Use the latest created root")
 
     def run(self):
-        self.jurt.shell(self.opts.target)
+        if self.opts.latest and self.opts.id:
+            raise CliError, "-i and -l cannot be used together"
+        self.jurt.shell(self.opts.target, latest=self.opts.latest,
+                id=self.opts.id)
 
 Shell().main()

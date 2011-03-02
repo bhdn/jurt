@@ -231,17 +231,25 @@ class Builder:
         self.deliver(id, results, logstore)
         return results
 
-    def shell(self, id, logstore):
-        root = self.rootmanager.create_new(id + "-shell",
-                self.packagemanager, self.repos, logstore)
+    def shell(self, id, logstore, latest=False, existing=False):
+        if latest or existing:
+            name = None
+            if existing:
+                name = id
+            root = self.rootmanager.get_root_by_name(name,
+                    self.packagemanager, logstore)
+        else:
+            root = self.rootmanager.create_new(id, self.packagemanager,
+                    self.repos, logstore)
         root.mount()
         try:
             username, uid = self.build_user_info()
-            self.packagemanager.setup_repositories(root, self.repos,
-                    logstore)
-            root.add_user(username, uid)
-            root.interactive_prepare(username, uid, self.packagemanager, self.repos,
-                    logstore)
+            if not existing and not latest:
+                self.packagemanager.setup_repositories(root, self.repos,
+                        logstore)
+                root.add_user(username, uid)
+                root.interactive_prepare(username, uid, self.packagemanager, self.repos,
+                        logstore)
             root.interactive_shell(username)
         finally:
             root.umount()

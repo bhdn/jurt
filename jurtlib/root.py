@@ -69,6 +69,9 @@ class RootManager(object):
     def test_sudo(self):
         raise NotImplementedError
 
+    def get_root_by_id(self, id):
+        raise NotImplementedError
+
 class ChrootSpool:
 
     def __init__(self, path, repopath):
@@ -243,12 +246,22 @@ class ChrootRootManager(RootManager):
             arch = self.arch
         return arch
 
-    def _update_latest_link(self, rootpath):
+    def _latest_link_name(self):
         username, _ = my_username()
-        linkname = username + "-latest"
+        name = username + "-latest"
+        return name
+
+    def _update_latest_link(self, rootpath):
+        linkname = self._latest_link_name()
         linkpath = self.path_from_name(linkname)
         rootname = os.path.basename(rootpath)
         util.replace_link(linkpath, rootname)
+
+    def _resolve_latest_link(self):
+        linkname = self._latest_link_name()
+        linkpath = self.path_from_name(linkname)
+        target = os.readlink(linkpath)
+        return target
 
     def create_new(self, name, packagemanager, repos, logger):
         path = self.path_from_name(name)
@@ -259,6 +272,16 @@ class ChrootRootManager(RootManager):
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
         self._update_latest_link(path)
+        return chroot
+
+    def get_root_by_name(self, name, packagemanager, logger):
+        if name is None:
+            name = self._resolve_latest_link()
+        path = self.path_from_name(name)
+        if not os.path.exists(path):
+            raise RootError, "root not found: %s" % (name)
+        arch = self._root_arch(packagemanager)
+        chroot = Chroot(self, path, arch)
         return chroot
 
     def test_sudo(self, interactive=True):

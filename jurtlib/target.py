@@ -69,12 +69,15 @@ class Target:
         logstore = self.loggerfactory.get_logger(id)
         self.builder.build(id, paths, logstore, stage)
 
-    def shell(self, id=None):
+    def shell(self, id=None, latest=False):
+        existing = False
         if id is None:
-            id = self.builder.build_id()
+            id = self.builder.build_id() + "-shell"
+        else:
+            existing = True
         self.builder.set_interactive()
         logstore = self.loggerfactory.get_logger(id)
-        self.builder.shell(id, logstore)
+        self.builder.shell(id, logstore, latest=latest, existing=existing)
 
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()
