@@ -1,0 +1,28 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand, CliError
+
+class Shell(JurtCommand):
+
+    descr = "Copies files into a root"
+    usage = "%prog [opts] FILES.."
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-t", "--target", type="string",
+                help="Target rooot name (jurt-list-targets for a list)")
+        parser.add_option("-i", "--id", default=None,
+                help=("Enter in an (supposedly) existing root named "
+                    "ID (see -l)"))
+        parser.add_option("-l", "--latest", default=False,
+                action="store_true",
+                help="Use the latest created root")
+
+    def run(self):
+        if self.opts.latest and self.opts.id:
+            raise CliError, "-i and -l cannot be used together"
+        if not self.args:
+            raise CliError, "you must provide some files to be copied"
+        self.jurt.put(self.args, self.opts.target, latest=self.opts.latest,
+                id=self.opts.id)
+
+Shell().main()

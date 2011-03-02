@@ -79,6 +79,14 @@ class Target:
         logstore = self.loggerfactory.get_logger(id)
         self.builder.shell(id, logstore, latest=latest, existing=existing)
 
+    def put(self, files, id=None, latest=False):
+        root = self.rootmanager.get_root_by_name(id, self.packagemanager)
+        self.builder.set_interactive()
+        username, uid = self.builder.build_user_info()
+        homedir = self.builder.build_user_home(username)
+        for file in files:
+            root.copy_in(file, homedir, uid=uid)
+
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()
         self.rootmanager.test_sudo(interactive)

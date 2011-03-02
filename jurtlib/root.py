@@ -274,7 +274,7 @@ class ChrootRootManager(RootManager):
         self._update_latest_link(path)
         return chroot
 
-    def get_root_by_name(self, name, packagemanager, logger):
+    def get_root_by_name(self, name, packagemanager):
         if name is None:
             name = self._resolve_latest_link()
         path = self.path_from_name(name)

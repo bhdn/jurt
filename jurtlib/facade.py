@@ -38,6 +38,10 @@ class JurtFacade:
         target = self._get_target(targetname)
         target.shell(id, latest=latest)
 
+    def put(self, files, targetname=None, latest=False, id=None):
+        target = self._get_target(targetname)
+        target.put(files, id=id, latest=latest)
+
     def check_permissions(self, interactive=True):
         if not self.targets:
             raise Error, "no targets setup, you must have at least "\

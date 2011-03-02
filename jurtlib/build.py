@@ -237,7 +237,7 @@ class Builder:
             if existing:
                 name = id
             root = self.rootmanager.get_root_by_name(name,
-                    self.packagemanager, logstore)
+                    self.packagemanager)
         else:
             root = self.rootmanager.create_new(id, self.packagemanager,
                     self.repos, logstore)
