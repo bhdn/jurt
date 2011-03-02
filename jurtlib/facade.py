@@ -1,4 +1,4 @@
-from jurtlib import Error
+from jurtlib import Error, SetupError
 from jurtlib import config, root, su, target as targetmod
 
 class JurtFacade:
@@ -10,6 +10,9 @@ class JurtFacade:
         self.targets = targetmod.load_targets(config)
 
     def _get_target(self, name=None):
+        if not self.targets:
+            raise SetupError, ("no build targets found, see %s" %
+                    (self.config.conf.system_file))
         if name is None:
             name = self.config.jurt.default_target
             if name == targetmod.UNSET_DEFAULT_TARGET:
