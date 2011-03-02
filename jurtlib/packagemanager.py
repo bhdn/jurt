@@ -174,7 +174,8 @@ class URPMIPackageManager(PackageManager):
                 if spool:
                     rootspool.destroy()
         except su.CommandError, e:
-
+            raise PackageManagerError, ("failed to setup repositories, "
+                    "see the logs at %s" % (outputlogger.location))
 
     def install_build_deps(self, srcpkgpath, root, repos, logstore, spool):
         args = self.urpmiopts[:]
