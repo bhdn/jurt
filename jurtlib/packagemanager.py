@@ -333,7 +333,7 @@ class URPMIPackageManager(PackageManager):
     def allowed_pm_commands(self):
         return self.allowedpmcmds[:]
 
-package_managers = Registry()
+package_managers = Registry("package manager type")
 package_managers.register("urpmi", URPMIPackageManager)
 
 def get_package_manager(pmconf, globalconf):

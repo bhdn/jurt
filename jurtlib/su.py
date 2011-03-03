@@ -1,8 +1,11 @@
 import os
 import subprocess
+import logging
 from jurtlib import Error, CommandError
 from jurtlib.registry import Registry
 from cStringIO import StringIO
+
+logger = logging.getLogger("jurt.su")
 
 def my_username():
     import pwd
@@ -177,6 +180,14 @@ class JurtRootWrapper(SuWrapper):
         except CommandError, e:
             raise SudoNotSetup
 
+    def btrfs_snapshot(self, from_, to):
+        logger.debug("creating btrfs snapshot from %s to %s" % (from_, to))
+        return self._exec_wrapper("btrfs-snapshot", [from_, to])
+
+    def btrfs_create(self, dest):
+        logger.debug("creating btrfs subvolume %s" % (dest))
+        return self._exec_wrapper("btrfs-create", [dest])
+
 class SuChrootWrapper:
 
     def __init__(self, path, arch, suwrapper):
@@ -209,7 +220,7 @@ class SuChrootWrapper:
     def __getattr__(self, name):
         return getattr(self.suwrapper, name)
 
-su_wrappers = Registry()
+su_wrappers = Registry("sudo wrapper")
 su_wrappers.register("jurt-root-wrapper", JurtRootWrapper)
 
 def get_su_wrapper(targetname, suconf, globalconf):

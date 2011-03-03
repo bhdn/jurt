@@ -69,7 +69,7 @@ class Logger:
         self.subpackages.append((subid, logger))
         return logger
 
-loggers = Registry()
+loggers = Registry("logger type")
 loggers.register("default", LoggerFactory)
 
 def get_logger_factory(loggerconf, globalconf):

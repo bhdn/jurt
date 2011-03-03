@@ -45,6 +45,9 @@ class Root(object):
             logstore):
         raise NotImplementedError
 
+    def allows_interactive_shell(self):
+        raise NotImplementedError
+
 class RootManager(object):
 
     @classmethod
@@ -304,6 +307,10 @@ class ChrootRootManager(RootManager):
             raise RootError, ("path must be inside %s or %s" %
                     (self.donedir, self.faildir))
 
+    # run as root
+    def allows_interactive_shell(self):
+        return self.allowshell
+
 class CompressedChrootManager(ChrootRootManager):
 
     @classmethod
@@ -362,10 +369,6 @@ class CompressedChrootManager(ChrootRootManager):
         return chroot
 
     # run as root
-    def allows_interactive_shell(self):
-        return self.allowshell
-
-    # run as root
     def root_compress_command(self, root, tarfile):
         return self.compress_command + [tarfile, "-C", root, "."]
 
@@ -373,9 +376,49 @@ class CompressedChrootManager(ChrootRootManager):
     def root_decompress_command(self, root, tarfile):
         return self.decompress_command + [tarfile, "-C", root, "."]
 
-root_managers = Registry()
+class BtrfsChrootManager(ChrootRootManager):
+
+    @classmethod
+    def load_config(class_, suwrapper, rootconf, globalconf):
+        names = ChrootRootManager.load_config(suwrapper, rootconf,
+                globalconf)
+        newsvcmd = shlex.split(rootconf.btrfs_create_subvol_command)
+        snapsvcmd = shlex.split(rootconf.btrfs_snapshot_subvol_command)
+        delsvcmd = shlex.split(rootconf.btrfs_delete_subvol_command)
+        targetname = rootconf.target_name
+        names.update(
+                dict(newsvcmd=newsvcmd,
+                    snapsvcmd=snapsvcmd,
+                    delsvcmd=delsvcmd,
+                    targetname=targetname))
+        return names
+
+    def __init__(self, newsvcmd, snapsvcmd, delsvcmd, targetname, *args,
+            **kwargs):
+        super(BtrfsChrootManager, self).__init__(*args, **kwargs)
+        self.newsvcmd = newsvcmd
+        self.snapsvcmd = snapsvcmd
+        self.delsvcmd = delsvcmd
+        self.targetname = targetname
+
+    def create_new(self, name, packagemanager, repos, logstore):
+        templatepath = os.path.join(self.topdir, self.targetname)
+        rootpath = self.path_from_name(name)
+        if not os.path.exists(templatepath):
+            self.su().btrfs_create(rootpath)
+            root = ChrootRootManager.create_new(self, name,
+                    packagemanager, repos, logstore)
+            self.su().btrfs_snapshot(rootpath, templatepath)
+        else:
+            self.su().btrfs_snapshot(templatepath, rootpath)
+            root = Chroot(self, rootpath, self._root_arch(packagemanager))
+            self._update_latest_link(rootpath)
+        return root
+
+root_managers = Registry("root type")
 root_managers.register("chroot", ChrootRootManager)
 root_managers.register("chroot-with-cache", CompressedChrootManager)
+root_managers.register("chroot-with-btrfs", BtrfsChrootManager)
 
 def get_root_manager(suwrapper, rootconf, globalconf):
     klass_ = root_managers.get_class(rootconf.root_type)

@@ -77,6 +77,11 @@ interactive-packages = sudo
 allow-interactive-shell = yes
 interactive = no
 
+btrfs-command = /sbin/btrfs
+btrfs-create-subvol-command = %(btrfs-command)s subvolume create
+btrfs-snapshot-subvol-command = %(btrfs-command)s subvolume snapshot
+btrfs-delete-subvol-command = %(btrfs-command)s subvolume delete
+
 #
 # used by jurt-root-command and jurt-setup
 #

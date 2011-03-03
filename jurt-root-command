@@ -82,6 +82,10 @@ class RootCommand(JurtCommand):
             self.interactiveshell()
         elif self.opts.type == "interactive-prepare":
             self.interactiveprepare()
+        elif self.opts.type == "btrfs-snapshot":
+            self.btrfs_snapshot()
+        elif self.opts.type == "btrfs-create":
+            self.btrfs_create()
         else:
             raise CliError, "invalid operation type: %s" % self.opts.type
 
@@ -351,5 +355,28 @@ class RootCommand(JurtCommand):
         if os.geteuid() != 0:
             sys.stderr.write("error: i am not root\n")
             sys.exit(1)
+
+    @_requires_target
+    def btrfs_snapshot(self):
+        if len(self.args) != 2:
+            raise CliError, "unexpected number of args"
+        from_ = self.args[0]
+        to = self.args[1]
+        self.target.rootmanager.check_valid_subdir(from_)
+        self.target.rootmanager.check_valid_subdir(to)
+        args = self.target.rootmanager.snapsvcmd[:]
+        args.append(from_)
+        args.append(to)
+        self._exec(args)
+
+    @_requires_target
+    def btrfs_create(self):
+        if len(self.args) != 1:
+            raise CliError, "unexpected number of args"
+        dest = self.args[0]
+        self.target.rootmanager.check_valid_subdir(dest)
+        args = self.target.rootmanager.newsvcmd[:]
+        args.append(dest)
+        self._exec(args)
 
 RootCommand().main()

@@ -257,7 +257,7 @@ class Builder:
     def set_interactive(self):
         self.interactive = True
 
-build_types = Registry()
+build_types = Registry("builder type")
 build_types.register("default", Builder)
 
 def get_builder(rootmanager, packagemanager, buildconf, globalconf):
