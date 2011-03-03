@@ -311,7 +311,8 @@ class URPMIPackageManager(PackageManager):
                     "command line"
         opts, args = getopt.gnu_getopt(args, "", ["root=", "auto",
                     "no-suggests", "excludedocs", "auto-select",
-                    "proxy=", "use-distrib=", "urpmi-root=", "distrib="])
+                    "proxy=", "use-distrib=", "urpmi-root=", "distrib=",
+                    "buildrequires"])
         absrootsdir = os.path.abspath(self.rootsdir) + "/"
         for opt, value in opts:
             if opt == "--root" or opt == "--urpmi-root":
