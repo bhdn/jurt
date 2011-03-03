@@ -3,6 +3,7 @@ import sys
 import os
 import shlex
 import subprocess
+from jurtlib import util
 from jurtlib.command import JurtCommand, CliError
 from jurtlib.template import template_expand
 
@@ -200,6 +201,7 @@ class RootCommand(JurtCommand):
         if not self.opts.dry_run:
             self._exec(cmd)
 
+
     @_requires_target
     def cheapcopy(self):
         if len(self.args) < 2:
@@ -207,7 +209,10 @@ class RootCommand(JurtCommand):
         source = self.args[0]
         dest = self.args[1]
         self.target.rootmanager.check_valid_subdir(dest)
-        cmd = ["cp", "-al", source, dest]
+        copyopts = "-af"
+        if util.same_partition(source, dest):
+            copyopts += "l"
+        cmd = ["cp", copyopts, source, dest]
         if not self.opts.dry_run:
             self._exec(cmd)
 

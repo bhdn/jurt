@@ -27,11 +27,6 @@ def create_dirs(path):
         logger.debug("created directory %s" % (path))
         os.makedirs(path)
 
-def same_partion(one, other):
-    st_one = os.stat(one)
-    st_other = os.stat(other)
-    return st_one.st_dev == st_other.st_dev
-
 class Builder:
 
     @classmethod
@@ -204,7 +199,7 @@ class Builder:
                         self.packagesdirname)
                 create_dirs(pkgdestdir)
                 destpath = os.path.join(pkgdestdir, os.path.basename(path))
-                if same_partion(pkgdestdir, path):
+                if util.same_partition(pkgdestdir, path):
                     logger.debug("creating hardlink from %s to %s" % (path,
                         destpath))
                     os.link(path, destpath)

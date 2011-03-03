@@ -16,3 +16,12 @@ def replace_link(linkpath, linkdest):
             os.unlink(linkpath)
     logger.debug("creating link %s pointing to %s" % (linkpath, linkdest))
     os.symlink(linkdest, linkpath)
+
+def node_dev(path):
+    if not os.path.exists(path):
+        path = os.path.dirname(path)
+    st = os.stat(path)
+    return st.st_dev
+
+def same_partition(one, other):
+    return node_dev(one) == node_dev(other)
