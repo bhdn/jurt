@@ -90,6 +90,7 @@ class URPMIPackageManager(PackageManager):
     def load_config(class_, pmconf, globalconf):
         basepkgs = pmconf.base_packages.split()
         urpmiopts = shlex.split(pmconf.urpmi_extra_options)
+        urpmivalidopts = pmconf.urpmi_valid_options.split()
         addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
         rpmunpackcmd = shlex.split(pmconf.rpm_install_source_command)
         rpmbuildcmd = shlex.split(pmconf.rpm_build_source_command)
@@ -101,6 +102,7 @@ class URPMIPackageManager(PackageManager):
         return dict(basepkgs=basepkgs,
                 rootsdir=pmconf.roots_path,
                 urpmiopts=urpmiopts,
+                urpmivalidopts=urpmivalidopts,
                 urpmicmd=urpmicmd,
                 addmediacmd=addmediacmd,
                 rpmunpackcmd=rpmunpackcmd,
@@ -112,10 +114,11 @@ class URPMIPackageManager(PackageManager):
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd,
             collectglob, urpmicmd, genhdlistcmd, addmediacmd, rpmarchcmd,
-            basepkgs, urpmiopts, allowedpmcmds):
+            basepkgs, urpmiopts, urpmivalidopts, allowedpmcmds):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
+        self.urpmivalidopts = urpmivalidopts
         self.urpmicmd = urpmicmd
         self.addmediacmd = addmediacmd
         self.rpmunpackcmd = rpmunpackcmd
@@ -309,10 +312,7 @@ class URPMIPackageManager(PackageManager):
         if pmtype == "urpmi" and not "--auto" in args:
             raise CommandValidationError, "--auto is missing in urpmi "\
                     "command line"
-        opts, args = getopt.gnu_getopt(args, "", ["root=", "auto",
-                    "no-suggests", "excludedocs", "auto-select",
-                    "proxy=", "use-distrib=", "urpmi-root=", "distrib=",
-                    "buildrequires"])
+        opts, args = getopt.gnu_getopt(args, "", self.urpmivalidopts)
         absrootsdir = os.path.abspath(self.rootsdir) + "/"
         for opt, value in opts:
             if opt == "--root" or opt == "--urpmi-root":

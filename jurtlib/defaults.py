@@ -59,6 +59,18 @@ urpmi-command = /usr/bin/env -i /usr/sbin/urpmi
 urpmiaddmedia-command = /usr/sbin/urpmi.addmedia --no-md5sum
     --allow-empty-media
 urpmi-extra-options = --no-suggests --excludedocs
+urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
+                      use-distrib= urpmi-root= distrib= buildrequires
+                      searchmedia= sortmedia= update synthesis= auto-update
+                      no-md5sum force-key no-uninstall no-install keep
+                      split-level= split-length= clean quiet debug
+                      debug-librpm allow-suggests justdb replacepkgs
+                      allow-nodeps allow-force parallel= download-all=
+                      downloader= curl-options= rsync-options=
+                      wget-options= limit-rate= resume retry= proxy-user=
+                      verify-rpm no-verify-rpm excludepath= ignorearch
+                      ignoresize repackage noscripts nolock P y q
+urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
 interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi
    /usr/sbin/urpme /usr/sbin/urpmi.addmedia /usr/sbin/urpmi.update
