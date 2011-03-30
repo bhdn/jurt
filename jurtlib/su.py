@@ -167,11 +167,11 @@ class JurtRootWrapper(SuWrapper):
         return self._exec_wrapper("postcommand", [], root=root, arch=arch)
 
     def interactive_prepare_conf(self, username, root=None, arch=None):
-        return self._exec_wrapper("interactive-prepare", [username],
+        return self._exec_wrapper("interactiveprepare", [username],
                 root=root, arch=arch)
 
     def interactive_shell(self, username, root=None, arch=None):
-        return self._exec_wrapper("interactive-shell", [username],
+        return self._exec_wrapper("interactiveshell", [username],
                 root=root, arch=arch, interactive=True)
 
     def test_sudo(self, interactive=True):
@@ -182,11 +182,11 @@ class JurtRootWrapper(SuWrapper):
 
     def btrfs_snapshot(self, from_, to):
         logger.debug("creating btrfs snapshot from %s to %s" % (from_, to))
-        return self._exec_wrapper("btrfs-snapshot", [from_, to])
+        return self._exec_wrapper("btrfssnapshot", [from_, to])
 
     def btrfs_create(self, dest):
         logger.debug("creating btrfs subvolume %s" % (dest))
-        return self._exec_wrapper("btrfs-create", [dest])
+        return self._exec_wrapper("btrfscreate", [dest])
 
 class SuChrootWrapper:
 

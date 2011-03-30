@@ -49,45 +49,12 @@ class RootCommand(JurtCommand):
         return [config.conf.system_file]
 
     def run(self):
-        if self.opts.type is None:
-            raise CliError, "the argument -t/--type is mandatory"
-        elif self.opts.type == "test":
-            self.test()
-        elif self.opts.type == "runpm":
-            if self.opts.pm is None:
-                raise CliError, "the option --pm is mandatory"
-            self.runpm()
-        elif self.opts.type == "mkdir":
-            self.mkdir()
-        elif self.opts.type == "adduser":
-            self.adduser()
-        elif self.opts.type == "copy":
-            self.copy()
-        elif self.opts.type == "copyout":
-            self.copyout()
-        elif self.opts.type == "cheapcopy":
-            self.cheapcopy()
-        elif self.opts.type == "run":
-            self.runcmd()
-        elif self.opts.type == "mount":
-            self.mount()
-        elif self.opts.type == "umount":
-            self.umount()
-        elif self.opts.type == "rootcompress":
-            self.rootcompress()
-        elif self.opts.type == "rootdecompress":
-            self.rootdecompress()
-        elif self.opts.type == "postcommand":
-            self.postcommand()
-        elif self.opts.type == "interactive-shell":
-            self.interactiveshell()
-        elif self.opts.type == "interactive-prepare":
-            self.interactiveprepare()
-        elif self.opts.type == "btrfs-snapshot":
-            self.btrfs_snapshot()
-        elif self.opts.type == "btrfs-create":
-            self.btrfs_create()
-        else:
+        if not self.opts.type:
+            raise CliError, "--pm is mandatory"
+        mname = "cmd_" + self.opts.type
+        try:
+            getattr(self, mname)()
+        except AttributeError:
             raise CliError, "invalid operation type: %s" % self.opts.type
 
     def _requires_target(f):
@@ -148,7 +115,9 @@ class RootCommand(JurtCommand):
                         sys.exit(p.returncode)
 
     @_requires_target
-    def runpm(self):
+    def cmd_runpm(self):
+        if self.opts.pm is None:
+            raise CliError, "the option --pm is mandatory"
         self.target.packagemanager.validate_cmd_args(self.opts.pm, self.args)
         self._exec(self.target.packagemanager.cmd_args(self.opts.pm, self.args))
 
@@ -165,7 +134,7 @@ class RootCommand(JurtCommand):
         return cmd
 
     @_requires_target
-    def adduser(self):
+    def cmd_adduser(self):
         if not self.args:
             raise CliError, "you must provide an username"
         cmd = shlex.split(self.config.root.adduser_command)
@@ -175,7 +144,7 @@ class RootCommand(JurtCommand):
             self._exec(cmd)
 
     @_requires_target
-    def copy(self):
+    def cmd_copy(self):
         if len(self.args) < 2:
             raise CliError, "copy requires two operands"
         source = self.args[0]
@@ -188,7 +157,7 @@ class RootCommand(JurtCommand):
             self._exec(cmd)
 
     @_requires_target
-    def copyout(self):
+    def cmd_copyout(self):
         if len(self.args) < 2:
             raise CliError, "copy requires two operands"
         source = self.args[0]
@@ -203,7 +172,7 @@ class RootCommand(JurtCommand):
 
 
     @_requires_target
-    def cheapcopy(self):
+    def cmd_cheapcopy(self):
         if len(self.args) < 2:
             raise CliError, "copy requires two operands"
         source = self.args[0]
@@ -217,7 +186,7 @@ class RootCommand(JurtCommand):
             self._exec(cmd)
 
     @_requires_target
-    def mkdir(self):
+    def cmd_mkdir(self):
         for arg in self.args:
             self.target.rootmanager.check_valid_subdir(arg)
             cmd = self._install_cmd(dir=True)
@@ -244,7 +213,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def runcmd(self):
+    def cmd_runcmd(self):
         if not self.opts.run_as:
             raise CliError, "--run-as is required for run"
         self._check_build_user(self.opts.run_as)
@@ -263,7 +232,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def mount(self):
+    def cmd_mount(self):
         fsname, devpath, mountpoint = self._mount_info()
         args = ["mount", "-t", fsname, devpath, mountpoint]
         if not self.opts.dry_run:
@@ -271,7 +240,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def umount(self):
+    def cmd_umount(self):
         _, _, mountpoint = self._mount_info()
         args = ["umount", mountpoint]
         if not self.opts.dry_run:
@@ -307,16 +276,16 @@ class RootCommand(JurtCommand):
                 os.rename(tmpname, file)
 
     @_requires_target
-    def rootcompress(self):
+    def cmd_rootcompress(self):
         self._comp_decomp(True)
 
     @_requires_target
-    def rootdecompress(self):
+    def cmd_rootdecompress(self):
         self._comp_decomp(False)
 
     @_requires_target
     @_requires_root
-    def postcommand(self):
+    def cmd_postcommand(self):
         args = shlex.split(self.config.root.su_for_post_command)
         args.append(self.target.rootmanager.post_command())
         if not self.opts.dry_run:
@@ -324,7 +293,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def interactiveshell(self):
+    def cmd_interactiveshell(self):
         if not self.args:
             raise CliError, "username is mandatory in args"
         if not self.target.rootmanager.allows_interactive_shell():
@@ -341,7 +310,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def interactiveprepare(self):
+    def cmd_interactiveprepare(self):
         if not self.args:
             raise CliError, "username is mandatory in args"
         user = self.args[0]
@@ -356,13 +325,13 @@ class RootCommand(JurtCommand):
         f.write(sudoline + "\n")
         f.close()
 
-    def test(self):
+    def cmd_test(self):
         if os.geteuid() != 0:
             sys.stderr.write("error: i am not root\n")
             sys.exit(1)
 
     @_requires_target
-    def btrfs_snapshot(self):
+    def cmd_btrfssnapshot(self):
         if len(self.args) != 2:
             raise CliError, "unexpected number of args"
         from_ = self.args[0]
@@ -375,7 +344,7 @@ class RootCommand(JurtCommand):
         self._exec(args)
 
     @_requires_target
-    def btrfs_create(self):
+    def cmd_btrfscreate(self):
         if len(self.args) != 1:
             raise CliError, "unexpected number of args"
         dest = self.args[0]
