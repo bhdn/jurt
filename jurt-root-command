@@ -299,7 +299,7 @@ class RootCommand(JurtCommand):
         if not self.target.rootmanager.allows_interactive_shell():
             raise CliError, "interactive configuration not allowed "\
                     "for this target"
-        args = shlex.split(self.config.root.sudo_shell_command)
+        args = shlex.split(self.config.root.sudo_interactive_shell_command)
         args.extend(("-u", self.args[0]))
         rawcmd = self.config.root.interactive_shell_command
         env = {"target": self.target.name, "root": self.opts.root}

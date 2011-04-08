@@ -103,7 +103,7 @@ adduser-command = /usr/sbin/adduser
 chroot-command = /usr/bin/env -i /usr/sbin/chroot
 su-command = /bin/su -l
 su-for-post-command = %(su-command)s -c
-sudo-shell-command = sudo -i
+sudo-interactive-shell-command = sudo -i
 install-command = install
 interactive-shell-term = xterm
 interactive-shell-command = /usr/bin/env -i "PS1=\u@$target \w> "
