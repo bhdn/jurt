@@ -297,7 +297,7 @@ class URPMIPackageManager(PackageManager):
         packager = self._get_packager()
         logger.debug("using %s as packager" % (packager))
         tf = tempfile.NamedTemporaryFile()
-        tf.write("""
+        tf.write("""\
 %%_topdir %s
 %%packager %s
 """ % (topdir, packager))
