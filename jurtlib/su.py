@@ -118,7 +118,7 @@ class JurtRootWrapper(SuWrapper):
             outputlogger=None):
         execargs = ["--run-as", user, "--"]
         execargs.extend(args)
-        return self._exec_wrapper("run", execargs, root=root, arch=arch,
+        return self._exec_wrapper("runcmd", execargs, root=root, arch=arch,
                 timeout=timeout, outputlogger=outputlogger)
 
     def _perm_args(self, uid, gid, mode):
