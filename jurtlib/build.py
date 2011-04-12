@@ -115,6 +115,7 @@ class Builder:
             username, uid = self.build_user_info()
             homedir = self.build_user_home(username)
             root.add_user(username, uid)
+            self.packagemanager.build_prepare(root, homedir, username, uid)
             insidepath = root.copy_in(path, homedir, self.useruid)
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
@@ -245,6 +246,8 @@ class Builder:
                 root.add_user(username, uid)
                 root.interactive_prepare(username, uid, self.packagemanager, self.repos,
                         logstore)
+                homedir = self.build_user_home(username)
+                self.packagemanager.build_prepare(root, homedir, username, uid)
             root.interactive_shell(username)
         finally:
             root.umount()

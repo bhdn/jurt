@@ -21,6 +21,9 @@ class Root(object):
     def copy_out(self, sourcepaths, dstpath):
         raise NotImplementedError
 
+    def mkdir(self, path, uid=None, gid=None, mode=None):
+        raise NotImplementedError
+
     def execute(self, command):
         raise NotImplementedError
 
@@ -116,6 +119,10 @@ class Chroot(Root):
         for source in realsources:
             self.manager.su().copyout(source, dstpath, uid=uid, gid=gid,
                     mode=mode)
+
+    def mkdir(self, path, uid=None, gid=None, mode="0755"):
+        realdestpath = os.path.abspath(self.path + "/" + path)
+        self.manager.su().mkdir(realdestpath, uid=uid, gid=gid, mode=mode)
 
     def su(self):
         #TODO kill su()

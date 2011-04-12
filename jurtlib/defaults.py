@@ -81,6 +81,18 @@ rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
 rpm-collect-glob = RPMS/*/*.rpm SRPMS/*.src.rpm
 rpm-get-arch-command = %(rpm-command)s --eval '%%{mandriva_arch}'
+rpm-get-packager-command = %(rpm-command)s
+          --eval '%%{?packager}%%{?!packager:PACKAGER_UNDEFINED}'
+rpm-packager-doc = If rpm-packager is not set, then jurt tried to get from
+                   rpm-get-packager-command, if it fails, it falls back to
+                   rpm-packager-default
+rpm-packager = undefined
+rpm-packager-default = Jurt Build Bot <root@mandriva.org>
+rpm-topdir = ~
+rpm-topdir-doc = do not try ~username because it will not work, jurt will
+          only try to create this directory if it doesn't exist and set
+          proper permissions
+rpm-macros-file = ~/.rpmmacros
 
 root-copy-files = /etc/hosts /etc/resolv.conf
 root-post-command = passwd -l root; touch /jurt-root

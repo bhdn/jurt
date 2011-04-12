@@ -121,10 +121,7 @@ class JurtRootWrapper(SuWrapper):
         return self._exec_wrapper("run", execargs, root=root, arch=arch,
                 timeout=timeout, outputlogger=outputlogger)
 
-    def mkdir(self, path):
-        return self._exec_wrapper("mkdir", [path])
-
-    def _copy_args(self, srcpath, dstpath, uid=None, gid=None, mode="0644"):
+    def _perm_args(self, uid, gid, mode):
         args = []
         if uid is not None:
             args.extend(("-u", str(uid)))
@@ -132,6 +129,15 @@ class JurtRootWrapper(SuWrapper):
             args.extend(("-g", str(gid)))
         if mode is not None:
             args.extend(("-m", mode))
+        return args
+
+    def mkdir(self, path, uid=None, gid=None, mode="0755"):
+        args = self._perm_args(uid, gid, mode)
+        args.append(path)
+        return self._exec_wrapper("mkdir", args)
+
+    def _copy_args(self, srcpath, dstpath, uid=None, gid=None, mode="0644"):
+        args = self._perm_args(uid, gid, mode)
         args.append(srcpath)
         args.append(dstpath)
         return args

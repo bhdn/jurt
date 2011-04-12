@@ -2,6 +2,7 @@ import sys
 import os
 import shlex
 import logging
+import tempfile
 from jurtlib import Error, CommandError, su, cmd
 from jurtlib.registry import Registry
 
@@ -29,6 +30,9 @@ class PackageManager:
         raise NotImplementedError
 
     def extract_source(self, path, root):
+        raise NotImplementedError
+
+    def build_prepare(self, root, homedir, username, uid):
         raise NotImplementedError
 
     def build_source(self, sourcepath, root, logger, spool):
@@ -94,11 +98,18 @@ class URPMIPackageManager(PackageManager):
         addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
         rpmunpackcmd = shlex.split(pmconf.rpm_install_source_command)
         rpmbuildcmd = shlex.split(pmconf.rpm_build_source_command)
+        rpmpackagercmd = shlex.split(pmconf.rpm_get_packager_command)
         urpmicmd = shlex.split(pmconf.urpmi_command)
         collectglob = shlex.split(pmconf.rpm_collect_glob)
         genhdlistcmd = shlex.split(pmconf.genhdlist_command)
         rpmarchcmd = shlex.split(pmconf.rpm_get_arch_command)
         allowedpmcmds = shlex.split(pmconf.interactive_allowed_urpmi_commands)
+        rpmtopdir = pmconf.rpm_topdir.strip()
+        rpmmacros = pmconf.rpm_macros_file.strip()
+        defpackager = pmconf.rpm_packager_default.strip()
+        packager = pmconf.rpm_packager.strip()
+        if packager == "undefined":
+            packager = None
         return dict(basepkgs=basepkgs,
                 rootsdir=pmconf.roots_path,
                 urpmiopts=urpmiopts,
@@ -110,11 +121,17 @@ class URPMIPackageManager(PackageManager):
                 collectglob=collectglob,
                 genhdlistcmd=genhdlistcmd,
                 rpmarchcmd=rpmarchcmd,
-                allowedpmcmds=allowedpmcmds)
+                rpmpackagercmd=rpmpackagercmd,
+                allowedpmcmds=allowedpmcmds,
+                defpackager=defpackager,
+                packager=packager,
+                rpmtopdir=rpmtopdir,
+                rpmmacros=rpmmacros)
 
-    def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd,
-            collectglob, urpmicmd, genhdlistcmd, addmediacmd, rpmarchcmd,
-            basepkgs, urpmiopts, urpmivalidopts, allowedpmcmds):
+    def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
+            urpmicmd, genhdlistcmd, addmediacmd, rpmarchcmd,
+            rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
+            allowedpmcmds, defpackager, packager, rpmtopdir, rpmmacros):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
@@ -126,7 +143,12 @@ class URPMIPackageManager(PackageManager):
         self.collectglob = collectglob
         self.genhdlistcmd = genhdlistcmd
         self.rpmarchcmd = rpmarchcmd
+        self.rpmpackagercmd = rpmpackagercmd
         self.allowedpmcmds = allowedpmcmds
+        self.defpackager = defpackager
+        self.packager = packager
+        self.rpmtopdir = rpmtopdir
+        self.rpmmacros = rpmmacros
 
     @classmethod
     def repos_from_config(self, configstr):
@@ -222,8 +244,14 @@ class URPMIPackageManager(PackageManager):
                 logref = ""
             raise PackageManagerError, msg + logref
 
+    def _expand_home(self, str, homedir):
+        return str.replace("~", homedir)
+
+    def _topdir(self, homedir):
+        return self._expand_home(self.rpmtopdir, homedir)
+
     def _topdir_args(self, homedir):
-        return (("--define", "_topdir %s" % (homedir)))
+        return ("--define", "_topdir %s" % (self._topdir(homedir)))
 
     def extract_source(self, path, root, username, homedir, logstore):
         args = self.rpmunpackcmd[:]
@@ -245,6 +273,38 @@ class URPMIPackageManager(PackageManager):
             raise PackageManagerError, "failed to extract %s, no spec "\
                     "files found" % (root.external_path(path))
         return found[0]
+
+    def _get_packager(self):
+        packager = self.packager
+        if packager is None:
+            args = self.rpmpackagercmd[:]
+            try:
+                output, _ = cmd.run(args)
+            except cmd.CommandError, e:
+                logger.error("error while getting packager macro: %s" % (e))
+                packager = self.defpackager
+            else:
+                if "PACKAGER_UNDEFINED" in output:
+                    packager = self.defpackager
+                else:
+                    packager = output.strip()
+        return packager
+
+    def build_prepare(self, root, homedir, username, uid):
+        topdir = self._topdir(homedir)
+        logger.debug("creating RPM topdir directory at %s" % (topdir))
+        root.mkdir(topdir, uid=uid)
+        packager = self._get_packager()
+        logger.debug("using %s as packager" % (packager))
+        tf = tempfile.NamedTemporaryFile()
+        tf.write("""
+%%_topdir %s
+%%packager %s
+""" % (topdir, packager))
+        tf.flush()
+        rpmmacros = self._expand_home(self.rpmmacros, homedir)
+        logger.debug("writing RPM macros to %s" % (rpmmacros))
+        root.copy_in(tf.name, rpmmacros, uid=uid)
 
     def check_build_stage(self, stage):
         if stage not in "pcilabstf":
