@@ -96,6 +96,7 @@ class URPMIPackageManager(PackageManager):
         urpmiopts = shlex.split(pmconf.urpmi_extra_options)
         urpmivalidopts = pmconf.urpmi_valid_options.split()
         addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
+        updatecmd = shlex.split(pmconf.urpmi_update_command)
         rpmunpackcmd = shlex.split(pmconf.rpm_install_source_command)
         rpmbuildcmd = shlex.split(pmconf.rpm_build_source_command)
         rpmpackagercmd = shlex.split(pmconf.rpm_get_packager_command)
@@ -116,6 +117,7 @@ class URPMIPackageManager(PackageManager):
                 urpmivalidopts=urpmivalidopts,
                 urpmicmd=urpmicmd,
                 addmediacmd=addmediacmd,
+                updatecmd=updatecmd,
                 rpmunpackcmd=rpmunpackcmd,
                 rpmbuildcmd=rpmbuildcmd,
                 collectglob=collectglob,
@@ -129,7 +131,7 @@ class URPMIPackageManager(PackageManager):
                 rpmmacros=rpmmacros)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
-            urpmicmd, genhdlistcmd, addmediacmd, rpmarchcmd,
+            urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
             allowedpmcmds, defpackager, packager, rpmtopdir, rpmmacros):
         self.rootsdir = rootsdir
@@ -138,6 +140,7 @@ class URPMIPackageManager(PackageManager):
         self.urpmivalidopts = urpmivalidopts
         self.urpmicmd = urpmicmd
         self.addmediacmd = addmediacmd
+        self.updatecmd = updatecmd
         self.rpmunpackcmd = rpmunpackcmd
         self.rpmbuildcmd = rpmbuildcmd
         self.collectglob = collectglob
@@ -211,6 +214,8 @@ class URPMIPackageManager(PackageManager):
         outputlogger = logstore.get_output_handler("build-deps-install")
         try:
             try:
+                root.su().run_package_manager("urpmi.update", [],
+                        outputlogger=outputlogger)
                 root.su().run_package_manager("urpmi", args,
                         outputlogger=outputlogger)
             finally:
@@ -387,6 +392,8 @@ class URPMIPackageManager(PackageManager):
             return self.urpmicmd[:] + args
         elif pmtype == "urpmi.addmedia":
             return self.addmediacmd[:] + args
+        elif pmtype == "urpmi.update":
+            return self.updatecmd[:] + args
         else:
             raise PackageManagerError, "invalid package manager"
 

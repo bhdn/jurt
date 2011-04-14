@@ -59,6 +59,7 @@ urpmi-command = /usr/bin/env -i /usr/sbin/urpmi
 urpmiaddmedia-command = /usr/sbin/urpmi.addmedia --no-md5sum
     --allow-empty-media
 urpmi-extra-options = --no-suggests --excludedocs
+urpmi-update-command = /usr/sbin/urpmi.update -a
 urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       use-distrib= urpmi-root= distrib= buildrequires
                       searchmedia= sortmedia= update synthesis= auto-update
