@@ -1,6 +1,7 @@
 import sys
 import os
 import shlex
+import re
 import logging
 import tempfile
 from jurtlib import Error, CommandError, su, cmd
@@ -110,6 +111,7 @@ class URPMIPackageManager(PackageManager):
         rpmmacros = pmconf.rpm_macros_file.strip()
         defpackager = pmconf.rpm_packager_default.strip()
         packager = pmconf.rpm_packager.strip()
+        urpmifatalexpr = re.compile(pmconf.urpmi_fatal_output)
         if packager == "undefined":
             packager = None
         return dict(basepkgs=basepkgs,
@@ -130,13 +132,14 @@ class URPMIPackageManager(PackageManager):
                 packager=packager,
                 rpmtopdir=rpmtopdir,
                 rpmsubdirs=rpmsubdirs,
-                rpmmacros=rpmmacros)
+                rpmmacros=rpmmacros,
+                urpmifatalexpr=urpmifatalexpr)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
             allowedpmcmds, defpackager, packager, rpmtopdir, rpmsubdirs,
-            rpmmacros):
+            rpmmacros, urpmifatalexpr):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
@@ -156,6 +159,7 @@ class URPMIPackageManager(PackageManager):
         self.rpmtopdir = rpmtopdir
         self.rpmsubdirs = rpmsubdirs
         self.rpmmacros = rpmmacros
+        self.urpmifatalexpr = urpmifatalexpr
 
     @classmethod
     def repos_from_config(self, configstr):
@@ -215,20 +219,23 @@ class URPMIPackageManager(PackageManager):
         args.append("--buildrequires")
         args.append(srcpkgpath)
         rootspool = root.make_spool_reachable(spool)
-        outputlogger = logstore.get_output_handler("build-deps-install")
+        outputlogger = logstore.get_output_handler("build-deps-install",
+                trap=self.urpmifatalexpr)
+        errmsg = ("failed to install build dependencies, see the logs at %s" %
+                    (outputlogger.location()))
         try:
             try:
                 root.su().run_package_manager("urpmi.update", [],
                         outputlogger=outputlogger)
                 root.su().run_package_manager("urpmi", args,
                         outputlogger=outputlogger)
+                if outputlogger.matches:
+                    raise PackageManagerError, errmsg
             finally:
                 outputlogger.close()
                 rootspool.destroy()
         except su.CommandError, e:
-            raise PackageManagerError, ("failed to install build "
-                    "dependencies, see the logs at %s" %
-                    (outputlogger.location()))
+            raise PackageManagerError, errmsg
 
     def install(self, packages, root, repos, logstore, logname=None):
         args = self.urpmiopts[:]

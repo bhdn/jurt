@@ -55,6 +55,8 @@ buildid-timefmt = %Y.%m.%d.%H%M%S
 
 sudo-command = /usr/bin/sudo -n
 jurt-root-command-command = /usr/sbin/jurt-root-command
+command-poll-time = 0.5
+
 urpmi-command = /usr/bin/env -i /usr/sbin/urpmi
 urpmiaddmedia-command = /usr/sbin/urpmi.addmedia --no-md5sum
     --allow-empty-media
@@ -76,6 +78,7 @@ genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
 interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi
    /usr/sbin/urpme /usr/sbin/urpmi.addmedia /usr/sbin/urpmi.update
    /usr/sbin/urpmi.removemedia
+urpmi-fatal-output = (No space left on device|A requested package cannot be installed)
 
 rpm-command = /bin/rpm
 rpm-install-source-command = %(rpm-command)s --nodeps -i

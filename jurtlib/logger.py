@@ -23,9 +23,21 @@ levelnames = "DEBUG", "INFO", "ERROR"
 
 class OutputLogger(file):
 
+    def __init__(self, name, mode="a", trap=None):
+        super(OutputLogger, self).__init__(name, mode)
+        self.trap = trap
+        self.matches = []
+
     def start(self):
         self.write("==== started log at %s\n" % (time.ctime()))
         self.flush()
+
+    def write(self, data):
+        file.write(self, data)
+        if self.trap is not None:
+            found = list(self.trap.finditer(data))
+            if found:
+                self.matches.extend(found)
 
     def close(self):
         self.write("==== closing log at %s\n" % (time.ctime()))
@@ -46,9 +58,9 @@ class Logger:
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-    def get_output_handler(self, name):
+    def get_output_handler(self, name, trap=None):
         path = os.path.join(self.path, name) + ".log"
-        fileobj = OutputLogger(path, mode="a")
+        fileobj = OutputLogger(path, trap=trap)
         logger.debug("created log file %s" % (path))
         fileobj.start()
         self.logfiles.append(path)

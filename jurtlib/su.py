@@ -1,4 +1,5 @@
 import os
+import time
 import subprocess
 import logging
 from jurtlib import Error, CommandError
@@ -49,19 +50,24 @@ class JurtRootWrapper(SuWrapper):
         import shlex
         sucmd = shlex.split(suconf.sudo_command)
         jurtrootcmd = shlex.split(suconf.jurt_root_command_command)
+        cmdpolltime = float(suconf.command_poll_time)
         return dict(sucmd=sucmd, jurtrootcmd=jurtrootcmd,
                 targetname=targetname,
-                builduser=suconf.build_user)
+                builduser=suconf.build_user,
+                cmdpolltime=cmdpolltime)
 
-    def __init__(self, sucmd, builduser, jurtrootcmd, targetname):
+    def __init__(self, sucmd, builduser, jurtrootcmd, targetname,
+            cmdpolltime):
         self.sucmd = sucmd
         self.jurtrootcmd = jurtrootcmd
         self.targetname = targetname
         self.builduser = builduser
+        self.cmdpolltime = cmdpolltime
 
     def _exec_wrapper(self, type, args, root=None, arch=None,
             outputlogger=None, timeout=None, ignoreerrors=False,
             interactive=False):
+        assert not (interactive and outputlogger)
         cmd = self.sucmd[:]
         cmd.extend(self.jurtrootcmd)
         cmd.extend(("--type", type))
@@ -78,11 +84,11 @@ class JurtRootWrapper(SuWrapper):
         cmdline = subprocess.list2cmdline(cmd)
         stderr = subprocess.STDOUT
         stdin = None
+        # prepare parameters for Popen:
         if outputlogger:
-            stdout = outputlogger
-            stdout.write(">>>> running privilleged helper: %s\n" % (cmdline))
-            stdout.flush()
-        elif interactive:
+            outputlogger.write(">>>> running privilleged helper: %s\n" % (cmdline))
+            outputlogger.flush()
+        if interactive:
             stdout = stderr = None
         else:
             stdout = subprocess.PIPE
@@ -90,11 +96,18 @@ class JurtRootWrapper(SuWrapper):
                 stdin = open("/dev/null") # FIXME test
         proc = subprocess.Popen(args=cmd, shell=False, stdout=stdout,
                 stderr=stderr)
-        proc.wait()
-        if stdout is subprocess.PIPE:
-            output = proc.stdout.read()
+        # wait for command to finish and collect output:
+        output = "(no output)"
+        if outputlogger:
+            while proc.poll() is None:
+                outputlogger.write(proc.stdout.read())
+                time.sleep(self.cmdpolltime)
+            outputlogger.write(proc.stdout.read())
         else:
-            output = "(no output)"
+            proc.wait()
+            if not interactive:
+                output = proc.stdout.read()
+        # check for error:
         if proc.returncode != 0:
             if timeout is not None and proc.returncode == 124:
                 # command timeout
