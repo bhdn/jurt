@@ -106,6 +106,7 @@ class URPMIPackageManager(PackageManager):
         rpmarchcmd = shlex.split(pmconf.rpm_get_arch_command)
         allowedpmcmds = shlex.split(pmconf.interactive_allowed_urpmi_commands)
         rpmtopdir = pmconf.rpm_topdir.strip()
+        rpmsubdirs = shlex.split(pmconf.rpm_topdir_subdirs)
         rpmmacros = pmconf.rpm_macros_file.strip()
         defpackager = pmconf.rpm_packager_default.strip()
         packager = pmconf.rpm_packager.strip()
@@ -128,12 +129,14 @@ class URPMIPackageManager(PackageManager):
                 defpackager=defpackager,
                 packager=packager,
                 rpmtopdir=rpmtopdir,
+                rpmsubdirs=rpmsubdirs,
                 rpmmacros=rpmmacros)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
-            allowedpmcmds, defpackager, packager, rpmtopdir, rpmmacros):
+            allowedpmcmds, defpackager, packager, rpmtopdir, rpmsubdirs,
+            rpmmacros):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
@@ -151,6 +154,7 @@ class URPMIPackageManager(PackageManager):
         self.defpackager = defpackager
         self.packager = packager
         self.rpmtopdir = rpmtopdir
+        self.rpmsubdirs = rpmsubdirs
         self.rpmmacros = rpmmacros
 
     @classmethod
@@ -299,6 +303,11 @@ class URPMIPackageManager(PackageManager):
         topdir = self._topdir(homedir)
         logger.debug("creating RPM topdir directory at %s" % (topdir))
         root.mkdir(topdir, uid=uid)
+        logger.debug("creating RPM build directories: %s",
+                " ".join(self.rpmsubdirs))
+        for name in self.rpmsubdirs:
+            path = os.path.join(topdir, name)
+            root.mkdir(path, uid=uid)
         packager = self._get_packager()
         logger.debug("using %s as packager" % (packager))
         tf = tempfile.NamedTemporaryFile()

@@ -93,6 +93,7 @@ rpm-topdir = ~
 rpm-topdir-doc = do not try ~username because it will not work, jurt will
           only try to create this directory if it doesn't exist and set
           proper permissions
+rpm-topdir-subdirs = BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
 rpm-macros-file = ~/.rpmmacros
 
 root-copy-files = /etc/hosts /etc/resolv.conf
