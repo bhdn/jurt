@@ -1,5 +1,6 @@
 import os
 import time
+import select
 import subprocess
 import logging
 from jurtlib import Error, CommandError
@@ -95,14 +96,19 @@ class JurtRootWrapper(SuWrapper):
             if os.path.exists("/dev/null"):
                 stdin = open("/dev/null") # FIXME test
         proc = subprocess.Popen(args=cmd, shell=False, stdout=stdout,
-                stderr=stderr)
+                stderr=stderr, bufsize=-1)
         # wait for command to finish and collect output:
         output = "(no output)"
         if outputlogger:
+            rfd = proc.stdout.fileno()
+            rl = [rfd]
+            wl = []
             while proc.poll() is None:
-                outputlogger.write(proc.stdout.read())
-                time.sleep(self.cmdpolltime)
-            outputlogger.write(proc.stdout.read())
+                nrl, _, _ = select.select(rl, wl, rl, self.cmdpolltime)
+                if nrl:
+                    outputlogger.write(os.read(rfd, 8196))
+                    outputlogger.flush()
+            outputlogger.write(os.read(rfd, 8196))
         else:
             proc.wait()
             if not interactive:
