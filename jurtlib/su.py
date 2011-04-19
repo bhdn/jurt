@@ -107,7 +107,6 @@ class JurtRootWrapper(SuWrapper):
                 nrl, _, _ = select.select(rl, wl, rl, self.cmdpolltime)
                 if nrl:
                     outputlogger.write(os.read(rfd, 8196))
-                    outputlogger.flush()
             outputlogger.write(os.read(rfd, 8196))
         else:
             proc.wait()
