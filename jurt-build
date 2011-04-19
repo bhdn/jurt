@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import sys
 from jurtlib.command import JurtCommand, CliError
 
 DESCR = """Builds a set of packages
@@ -22,10 +23,18 @@ class Build(JurtCommand):
                 help="Target packages are built for")
         parser.add_option("-b", "--stop", default=None, metavar="STAGE",
                 help="Stop at build stage STAGE and drops into a shell")
+        parser.add_option("-l", "--showlog",
+                action="store_true", default=False,
+                help="Show the (also logged) output of build process")
 
     def run(self):
         if not self.args:
             raise CliError, "no source packages provided (--help?)"
-        self.jurt.build(self.args, self.opts.target, stage=self.opts.stop)
+        if self.opts.showlog:
+            outputfile = sys.stdout
+        else:
+            outputfile = None
+        self.jurt.build(self.args, self.opts.target, stage=self.opts.stop,
+                outputfile=outputfile)
 
 Build().main()

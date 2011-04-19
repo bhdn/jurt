@@ -26,10 +26,11 @@ class JurtFacade:
         target.check_permissions(False)
         return target
 
-    def build(self, paths, targetname=None, id=None, stage=None):
+    def build(self, paths, targetname=None, id=None, stage=None,
+            outputfile=None):
         """Builds a set of packages"""
         target = self._get_target(targetname)
-        target.build(paths, id=id, stage=stage)
+        target.build(paths, id=id, stage=stage, outputfile=outputfile)
 
     def target_names(self):
         return self.targets.keys()

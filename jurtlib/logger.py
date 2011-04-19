@@ -15,17 +15,18 @@ class LoggerFactory:
     def __init__(self, logbasedir):
         self.logbasedir = logbasedir
 
-    def get_logger(self, id):
-        return Logger(id, self.logbasedir)
+    def get_logger(self, id, outputfile=None):
+        return Logger(id, self.logbasedir, outputfile=outputfile)
 
 DEBUG, INFO, ERROR = xrange(3)
 levelnames = "DEBUG", "INFO", "ERROR"
 
 class OutputLogger(file):
 
-    def __init__(self, name, mode="a", trap=None):
+    def __init__(self, name, mode="a", trap=None, outputfile=None):
         super(OutputLogger, self).__init__(name, mode)
         self.trap = trap
+        self.outputfile = outputfile
         self.matches = []
 
     def start(self):
@@ -38,6 +39,8 @@ class OutputLogger(file):
             found = list(self.trap.finditer(data))
             if found:
                 self.matches.extend(found)
+        if self.outputfile is not None:
+            self.outputfile.write(data)
 
     def close(self):
         self.write("==== closing log at %s\n" % (time.ctime()))
@@ -49,18 +52,19 @@ class OutputLogger(file):
 
 class Logger:
 
-    def __init__(self, id, logbasedir):
+    def __init__(self, id, logbasedir, outputfile=None):
         self.id = id
         self.path = os.path.join(logbasedir, id)
         self.subpackages = []
         self.logfiles = []
         self.level = INFO
+        self.outputfile = outputfile
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
     def get_output_handler(self, name, trap=None):
         path = os.path.join(self.path, name) + ".log"
-        fileobj = OutputLogger(path, trap=trap)
+        fileobj = OutputLogger(path, trap=trap, outputfile=self.outputfile)
         logger.debug("created log file %s" % (path))
         fileobj.start()
         self.logfiles.append(path)
@@ -77,7 +81,7 @@ class Logger:
         return self.id, found
 
     def subpackage(self, subid):
-        logger = Logger(subid, self.path)
+        logger = Logger(subid, self.path, outputfile=self.outputfile)
         self.subpackages.append((subid, logger))
         return logger
 
