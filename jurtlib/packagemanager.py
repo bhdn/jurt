@@ -333,7 +333,7 @@ class URPMIPackageManager(PackageManager):
                     (stage))
 
     def build_source(self, sourcepath, root, logstore, builduser, homedir,
-            spool, stage=None):
+            spool, stage=None, timeout=None):
         args = self.rpmbuildcmd[:]
         args.extend(self._topdir_args(homedir))
         if stage:
@@ -347,7 +347,7 @@ class URPMIPackageManager(PackageManager):
         try:
             try:
                 root.su().run_as(args, user=builduser,
-                        outputlogger=outputlogger)
+                        outputlogger=outputlogger, timeout=timeout)
             except su.CommandError:
                 logger.error("build failed, see the logs at %s" %
                         (outputlogger.location()))

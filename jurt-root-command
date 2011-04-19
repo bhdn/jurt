@@ -107,7 +107,10 @@ class RootCommand(JurtCommand):
                 if p.returncode != 0:
                     msg = ("command failed with %d (output above "
                             "^^^^^^^^^^)\n" % p.returncode)
-                    if exit:
+                    # in case of timeout (err 124), only return the error
+                    # code to the caller
+                    if exit and not (self.opts.timeout
+                                     and p.returncode == 124):
                         raise CliError, msg
                     else:
                         if error:

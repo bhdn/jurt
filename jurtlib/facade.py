@@ -27,10 +27,11 @@ class JurtFacade:
         return target
 
     def build(self, paths, targetname=None, id=None, stage=None,
-            outputfile=None):
+            timeout=None, outputfile=None):
         """Builds a set of packages"""
         target = self._get_target(targetname)
-        target.build(paths, id=id, stage=stage, outputfile=outputfile)
+        target.build(paths, id=id, stage=stage, timeout=timeout,
+                outputfile=outputfile)
 
     def target_names(self):
         return self.targets.keys()

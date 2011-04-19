@@ -26,6 +26,10 @@ class Build(JurtCommand):
         parser.add_option("-l", "--showlog",
                 action="store_true", default=False,
                 help="Show the (also logged) output of build process")
+        parser.add_option("-d", "--duration", default=None, type="int",
+                metavar="SECS",
+                help=("Limit in seconds of build time (when exceeded the "
+                     "build task is killed with SIGTERM)"))
 
     def run(self):
         if not self.args:
@@ -34,7 +38,8 @@ class Build(JurtCommand):
             outputfile = sys.stdout
         else:
             outputfile = None
-        self.jurt.build(self.args, self.opts.target, stage=self.opts.stop,
+        self.jurt.build(self.args, self.opts.target,
+                timeout=self.opts.duration, stage=self.opts.stop,
                 outputfile=outputfile)
 
 Build().main()

@@ -107,7 +107,8 @@ class Builder:
         path = os.path.abspath(value)
         return path
 
-    def build_one(self, id, sourceid, path, logstore, spool, stage=None):
+    def build_one(self, id, sourceid, path, logstore, spool, stage=None,
+            timeout=None):
         root = self.rootmanager.create_new(self.root_name(id, sourceid, path),
                 self.packagemanager, self.repos, logstore)
         root.mount()
@@ -125,7 +126,7 @@ class Builder:
                     logstore, spool)
             (package, success, builtpaths) = \
                     self.packagemanager.build_source(srcpath, root, logstore,
-                            username, homedir, spool, stage)
+                            username, homedir, spool, stage, timeout)
             if self.interactive:
                 root.interactive_prepare(username, uid,
                         self.packagemanager, self.repos, logstore)
@@ -211,7 +212,7 @@ class Builder:
         util.replace_link(latestpath, id)
         logger.info("done. check out %s" % (topdir))
 
-    def build(self, id, paths, logstore, stage=None):
+    def build(self, id, paths, logstore, stage=None, timeout=None):
         spool = self.create_spool(id)
         results = []
         for sourcepath in paths:
@@ -219,7 +220,7 @@ class Builder:
         for sourcepath in paths:
             sourceid = self._get_source_id(sourcepath)
             result = self.build_one(id, sourceid, sourcepath,
-                    logstore.subpackage(sourceid), spool, stage)
+                    logstore.subpackage(sourceid), spool, stage, timeout)
             if result.success:
                 spool.put_packages(result.builtpaths)
             results.append(result)
