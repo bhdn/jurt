@@ -18,9 +18,6 @@ class LoggerFactory:
     def get_logger(self, id, outputfile=None):
         return Logger(id, self.logbasedir, outputfile=outputfile)
 
-DEBUG, INFO, ERROR = xrange(3)
-levelnames = "DEBUG", "INFO", "ERROR"
-
 class OutputLogger(file):
 
     def __init__(self, name, mode="a", trap=None, outputfile=None):
@@ -57,7 +54,6 @@ class Logger:
         self.path = os.path.join(logbasedir, id)
         self.subpackages = []
         self.logfiles = []
-        self.level = INFO
         self.outputfile = outputfile
         if not os.path.exists(self.path):
             os.makedirs(self.path)
