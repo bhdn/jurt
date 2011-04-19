@@ -59,7 +59,6 @@ command-poll-time = 0.5
 
 urpmi-command = /usr/bin/env -i /usr/sbin/urpmi
 urpmiaddmedia-command = /usr/sbin/urpmi.addmedia --no-md5sum
-    --allow-empty-media
 urpmi-extra-options = --no-suggests --excludedocs
 urpmi-update-command = /usr/sbin/urpmi.update -a
 urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
