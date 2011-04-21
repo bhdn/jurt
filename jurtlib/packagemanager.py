@@ -71,7 +71,7 @@ class URPMIRepos:
     def parse_conf(class_, configline):
         medias = []
         distribs = []
-        for conf in configline.split(";"):
+        for conf in configline.split("|"):
             conf = conf.strip()
             if not conf:
                 continue
