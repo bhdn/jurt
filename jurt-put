@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from jurtlib.command import JurtCommand, CliError
 
-class Shell(JurtCommand):
+class Put(JurtCommand):
 
     descr = "Copies files into a root"
     usage = "%prog [opts] FILES.."
@@ -25,4 +25,4 @@ class Shell(JurtCommand):
         self.jurt.put(self.args, self.opts.target, latest=self.opts.latest,
                 id=self.opts.id)
 
-Shell().main()
+Put().main()
