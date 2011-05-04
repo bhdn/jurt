@@ -72,6 +72,7 @@ urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       wget-options= limit-rate= resume retry= proxy-user=
                       verify-rpm no-verify-rpm excludepath= ignorearch
                       ignoresize repackage noscripts nolock P y q
+                      tune-rpm= nofdigest
 urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
 interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi
