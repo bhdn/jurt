@@ -41,7 +41,10 @@ class Root(object):
         find files inside the root, mostly for error messages"""
         raise NotImplementedError
 
-    def mount(self):
+    def activate(self):
+        raise NotImplementedError
+
+    def deactivate(self):
         raise NotImplementedError
 
     def interactive_prepare(self, username, uid, packagemanager, repos,
@@ -76,6 +79,9 @@ class RootManager(object):
         raise NotImplementedError
 
     def get_root_by_id(self, id):
+        raise NotImplementedError
+
+    def activate_root(self, root):
         raise NotImplementedError
 
 class ChrootSpool:
@@ -160,12 +166,13 @@ class Chroot(Root):
         logger.info("you are inside %s" % (self.path))
         self.su().interactive_shell(username)
 
-    def mount(self):
+    def activate(self):
+        self.manager.activate_root(self)
         self.manager.su().mount("proc", self.path, self.arch)
         self.manager.su().mount("sys", self.path, self.arch)
         self.manager.su().mount("pts", self.path, self.arch)
 
-    def umount(self):
+    def deactivate(self):
         self.manager.su().umount("pts", self.path, self.arch)
         self.manager.su().umount("sys", self.path, self.arch)
         self.manager.su().umount("proc", self.path, self.arch)
@@ -223,9 +230,6 @@ class ChrootRootManager(RootManager):
     def su(self):
         return self.suwrapper
 
-    def path_from_name(self, name):
-        return os.path.join(self.topdir, name)
-
     def _copy_files_from_conf(self, root):
         for path in self.copyfiles:
             root.copy_in(path, os.path.dirname(path))
@@ -273,6 +277,22 @@ class ChrootRootManager(RootManager):
         target = os.readlink(linkpath)
         return target
 
+    def path_from_name(self, name):
+        return os.path.join(self.topdir, name)
+
+    # active, new, old
+    def _active_path(self, name):
+        path = os.path.join(self.topdir, self.activedir)
+        return os.path.join(path, name)
+
+    def _new_path(self, name):
+        path = os.path.join(self.topdir, self.newdir)
+        return os.path.join(path, name)
+
+    def _old_path(self, name):
+        path = os.path.join(self.topdir, self.olddir)
+        return os.path.join(path, name)
+
     def create_new(self, name, packagemanager, repos, logger):
         path = self.path_from_name(name)
         self.su().mkdir(path)
@@ -283,6 +303,13 @@ class ChrootRootManager(RootManager):
         self._execute_conf_command(chroot)
         self._update_latest_link(path)
         return chroot
+
+    def activate_root(self, root):
+        name = os.path.basename(root.path)
+        dest = self._active_path(name)
+        if not util.same_partition(root.path, dest):
+            raise RootError, ("%s and %s must be on the same partition" %
+                    (root.path, dest))
 
     def get_root_by_name(self, name, packagemanager):
         if name is None:
