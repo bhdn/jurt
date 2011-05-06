@@ -1,9 +1,16 @@
 #!/usr/bin/python
 from jurtlib.command import JurtCommand, CliError
 
+DESCR = """\
+Creates a root and drops into a shell.
+
+(Notice you can also use jurt-build --stop)
+"""
+
 class Shell(JurtCommand):
 
-    descr = "Creates a root and drops into a shell"
+    usage = "%prog -t TARGET [-l] [-i root-id]"
+    descr = DESCR
 
     def init_parser(self, parser):
         JurtCommand.init_parser(self, parser)
