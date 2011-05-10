@@ -14,6 +14,15 @@ class RootError(Error):
     pass
 
 class Root(object):
+    """
+    A root object must be in one of these states:
+
+    - temp: roots being created, cannot be removed
+    - active: packages can be built, files copied into, mount points,
+      cannot be removed
+    - keep: roots that were pinned and can be reused soon
+    - old: can be removed at any time, can go to active state at any time
+    """
 
     def copy_in(self, files, dstpath):
         raise NotImplementedError
