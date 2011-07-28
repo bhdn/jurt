@@ -356,4 +356,13 @@ class RootCommand(JurtCommand):
         args.append(dest)
         self._exec(args)
 
+    @_requires_target
+    def cmd_rename(self):
+        if len(self.args) != 2:
+            raise CliError, "unexpected number of args"
+        src, dst = self.args
+        self.target.rootmanager.check_valid_subdir(src)
+        self.target.rootmanager.check_valid_subdir(dst)
+        os.rename(src, dst) # TODO what else to check? permissions?
+
 RootCommand().main()
