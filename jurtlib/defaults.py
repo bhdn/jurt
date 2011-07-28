@@ -125,7 +125,9 @@ su-for-post-command = %(su-command)s -c
 sudo-interactive-shell-command = sudo -i
 install-command = install
 interactive-shell-term = xterm
-interactive-shell-command = /usr/bin/env "PS1=\u@$target \w> "
+; note that newer sudo doesn't allow passing variables with spaces to
+; commands :(
+interactive-shell-command = /usr/bin/env "PS1=\u@$target-\w> "
   "TERM=%(interactive-shell-term)s" /bin/bash
 sudo-pm-allow-format = $user ALL=(ALL) NOPASSWD: $commands
 sudoers = /etc/sudoers
