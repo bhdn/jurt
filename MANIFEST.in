@@ -1,2 +1,4 @@
 recursive-include jurtlib/ *.py
 include README jurt.conf
+include jurt-suid.c
+include Makefile
