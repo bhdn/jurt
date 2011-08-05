@@ -181,8 +181,10 @@ class Chroot(Root):
         return os.path.abspath(self.path + "/" + localpath)
 
     def interactive_prepare(self, username, uid, packagemanager, repos, logstore):
-        packagemanager.install(self.manager.interactive_packages(), self,
-                repos, logstore, "interactive-prepare")
+        packages = self.manager.interactive_packages()
+        if packages:
+            packagemanager.install(packages, self, repos, logstore,
+                    "interactive-prepare")
         self.su().interactive_prepare_conf(username)
 
     def interactive_shell(self, username):
