@@ -2,10 +2,7 @@
 import sys
 import os
 import shlex
-import subprocess
-from jurtlib import util
 from jurtlib.command import JurtCommand, CliError
-from jurtlib.template import template_expand
 
 MOUNT_TYPES = {
         "proc": ("proc", "jurt-mounted-proc-for-you", "/proc"),
@@ -77,6 +74,7 @@ class RootCommand(JurtCommand):
         return w
 
     def _exec(self, args, exit=True, error=True, interactive=False):
+        import subprocess
         allcmd = []
         if self.opts.timeout is not None:
             allcmd.extend(("timeout", str(self.opts.timeout)))
@@ -176,6 +174,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     def cmd_cheapcopy(self):
+        from jurtlib import util
         if len(self.args) < 2:
             raise CliError, "copy requires two operands"
         source = self.args[0]
@@ -297,6 +296,7 @@ class RootCommand(JurtCommand):
     @_requires_target
     @_requires_root
     def cmd_interactiveshell(self):
+        from jurtlib.template import template_expand
         if not self.args:
             raise CliError, "username is mandatory in args"
         if not self.target.rootmanager.allows_interactive_shell():
@@ -314,6 +314,7 @@ class RootCommand(JurtCommand):
     @_requires_target
     @_requires_root
     def cmd_interactiveprepare(self):
+        from jurtlib.template import template_expand
         if not self.args:
             raise CliError, "username is mandatory in args"
         user = self.args[0]
