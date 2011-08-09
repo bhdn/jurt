@@ -314,7 +314,9 @@ class ChrootRootManager(RootManager):
         rootname = os.path.basename(rootpath)
         # creates a relative link pointing to statename/rootid
         rootsubdir = self._root_path(state, rootname)
-        util.replace_link(self._latest_path(), rootsubdir)
+        comps = os.path.abspath(rootsubdir).rsplit(os.path.sep, 2)
+        relative = os.path.sep.join(comps[-2:])
+        util.replace_link(self._latest_path(), relative)
 
     def _resolve_latest_link(self):
         # FIXME FIXME handle broken or unexising link!
