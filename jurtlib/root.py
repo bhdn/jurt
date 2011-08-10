@@ -416,7 +416,7 @@ class ChrootRootManager(RootManager):
             state, path = self._resolve_latest_link()
         else:
             state, path = self._existing_root(name)
-        if not os.path.exists(path):
+        if path is None or not os.path.exists(path):
             raise RootError, "root not found: %s" % (name)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state)
