@@ -358,9 +358,8 @@ class ChrootRootManager(RootManager):
                 (Old, self._old_path(name)),
                 (Temp, self._temp_path(name)))
         for state, dir in statedirs:
-            testpath = os.path.join(dir, name)
-            if os.path.exists(testpath):
-                return state, testpath
+            if os.path.exists(dir):
+                return state, dir
         else:
             return None, None
 
