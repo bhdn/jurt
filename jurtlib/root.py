@@ -383,7 +383,6 @@ class ChrootRootManager(RootManager):
         chroot = Chroot(self, path, arch)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
-        self._update_latest_link(Temp, path)
         return chroot
 
     def _move_root(self, root, dest):
@@ -402,6 +401,7 @@ class ChrootRootManager(RootManager):
             dest = self._active_path(name)
             self._move_root(root, dest)
             root.state = Active
+            self._update_latest_link(root.state, root.path)
 
     def deactivate_root(self, root):
         if root.state != Old:
@@ -410,6 +410,7 @@ class ChrootRootManager(RootManager):
             dest = self._old_path(name)
             self._move_root(root, dest)
             root.state = Old
+            self._update_latest_link(root.state, root.path)
 
     def get_root_by_name(self, name, packagemanager):
         if name is None:
@@ -500,7 +501,6 @@ class CompressedChrootManager(ChrootRootManager):
             chroot = Chroot(self, path, self._root_arch(packagemanager))
             logger.debug("decompressing %s into %s" % (cachepath, path))
             self.suwrapper.decompress_root(cachepath, path)
-            self._update_latest_link(Temp, path)
         return chroot
 
     # run as root
@@ -547,7 +547,6 @@ class BtrfsChrootManager(ChrootRootManager):
         else:
             self.su().btrfs_snapshot(templatepath, rootpath)
             root = Chroot(self, rootpath, self._root_arch(packagemanager))
-            self._update_latest_link(Temp, rootpath)
         return root
 
 root_managers = Registry("root type")
