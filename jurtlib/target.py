@@ -70,11 +70,11 @@ class Target:
         logstore = self.loggerfactory.get_logger(id, outputfile)
         self.builder.build(id, paths, logstore, stage, timeout)
 
-    def shell(self, id=None, latest=False):
+    def shell(self, id=None, forcenew=False, latest=False):
         existing = False
         if id is None:
             id = self.builder.build_id() + "-shell"
-        else:
+        elif not forcenew:
             existing = True
         self.builder.set_interactive()
         logstore = self.loggerfactory.get_logger(id)

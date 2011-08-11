@@ -326,7 +326,8 @@ class ChrootRootManager(RootManager):
         if len(fields) < 2:
             raise ChrootError, "invalid path name linked by %s" % (linkpath)
         statename = fields[-2]
-        return self._dir_to_state(statename), target
+        path = os.path.join(self.topdir, target)
+        return self._dir_to_state(statename), path
 
     def _state_path(self, dir, name):
         return os.path.join(self.topdir, dir, name)
@@ -370,11 +371,16 @@ class ChrootRootManager(RootManager):
             if not os.path.exists(statepath):
                 raise ChrootError, "missing roots directory: %s" % (statepath)
 
-    def create_new(self, name, packagemanager, repos, logger):
+    def _check_new_root_name(self, name):
         state, path = self._existing_root(name)
         if state is not None:
             raise ChrootError, ("the root name %s conflicts with existing "
                     "root at %s" % (name, path))
+        if "/" in name:
+            raise ChrootError, "invalid root name: %s" % (name)
+
+    def create_new(self, name, packagemanager, repos, logger):
+        self._check_new_root_name(name)
         path = self._temp_path(name)
         self.su().mkdir(path)
         packagemanager.create_root(self.suwrapper, repos, path, logger)
@@ -482,6 +488,7 @@ class CompressedChrootManager(ChrootRootManager):
                 output))
 
     def create_new(self, name, packagemanager, repos, logstore):
+        self._check_new_root_name(name)
         cachepath = os.path.join(self.cachedir, self.targetname +
                 self.cacheext)
         if not os.path.exists(cachepath):
@@ -536,6 +543,7 @@ class BtrfsChrootManager(ChrootRootManager):
         self.targetname = targetname
 
     def create_new(self, name, packagemanager, repos, logstore):
+        self._check_new_root_name(name)
         templatepath = os.path.join(self.topdir, self.targetname)
         rootpath = self._root_path(Temp, name)
         if not os.path.exists(templatepath):
