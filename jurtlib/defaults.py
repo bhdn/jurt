@@ -28,6 +28,10 @@ logger-type = default
 
 jurt-base-dir = /var/spool/jurt
 roots-path = %(jurt-base-dir)s/chroots/
+active-roots-dir = %(roots-path)s/active/
+temp-roots-dir = %(roots-path)s/temp/
+old-roots-dir = %(roots-path)s/old/
+keep-roots-dir = %(roots-path)s/old/
 builds-dir = %(jurt-base-dir)s/builds/
 spool-dir = %(builds-dir)s/spools/
 logs-dir = %(builds-dir)s/logs/
@@ -123,7 +127,9 @@ su-for-post-command = %(su-command)s -c
 sudo-interactive-shell-command = sudo -i
 install-command = install
 interactive-shell-term = xterm
-interactive-shell-command = /usr/bin/env "PS1=\u@$target \w> "
+; note that newer sudo doesn't allow passing variables with spaces to
+; commands :(
+interactive-shell-command = /usr/bin/env "PS1=\u@$target-\w> "
   "TERM=%(interactive-shell-term)s" /bin/bash
 sudo-pm-allow-format = $user ALL=(ALL) NOPASSWD: $commands
 sudoers = /etc/sudoers

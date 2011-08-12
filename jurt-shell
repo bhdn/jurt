@@ -22,11 +22,20 @@ class Shell(JurtCommand):
         parser.add_option("-l", "--latest", default=False,
                 action="store_true",
                 help="Use the latest created root")
+        parser.add_option("-n", "--newid", default=None, metavar="ID",
+                help=("Set the name of the root to be created "
+                    "(so that it can be reused with -i ID)"))
 
     def run(self):
         if self.opts.latest and self.opts.id:
             raise CliError, "-i and -l cannot be used together"
+        if self.opts.newid:
+            id = self.opts.newid
+            forcenew = True
+        else:
+            id = self.opts.id
+            forcenew = False
         self.jurt.shell(self.opts.target, latest=self.opts.latest,
-                id=self.opts.id)
+                forcenew=forcenew, id=id)
 
 Shell().main()

@@ -242,15 +242,8 @@ class URPMIPackageManager(PackageManager):
         args.append("--auto")
         args.extend(packages)
         if logname:
-            outputlogger = logstore.get_output_handler(logname)
-        try:
-            try:
-                root.su().run_package_manager("urpmi", args,
-                        outputlogger=outputlogger)
-            finally:
-                if logname:
-                    outputlogger.close()
-        except su.CommandError, e:
+            outputlogger = logstore.get_output_handler(logname,
+                    trap=self.urpmifatalexpr)
             names = " ".join(packages)
             msg = "failed to install packages [%s]" % (names)
             if logname:
@@ -258,6 +251,18 @@ class URPMIPackageManager(PackageManager):
                         (outputlogger.location()))
             else:
                 logref = ""
+        try:
+            try:
+                root.su().run_package_manager("urpmi.update", [],
+                        outputlogger=outputlogger)
+                root.su().run_package_manager("urpmi", args,
+                        outputlogger=outputlogger)
+                if outputlogger.matches:
+                    raise PackageManagerError, msg + logref
+            finally:
+                if logname:
+                    outputlogger.close()
+        except su.CommandError, e:
             raise PackageManagerError, msg + logref
 
     def _expand_home(self, str, homedir):

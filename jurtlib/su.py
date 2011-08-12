@@ -149,6 +149,10 @@ class JurtRootWrapper(SuWrapper):
             args.extend(("-m", mode))
         return args
 
+    def rename(self, srcpath, dstpath):
+        args = [srcpath, dstpath]
+        return self._exec_wrapper("rename", args)
+
     def mkdir(self, path, uid=None, gid=None, mode="0755"):
         args = self._perm_args(uid, gid, mode)
         args.append(path)
@@ -214,32 +218,32 @@ class JurtRootWrapper(SuWrapper):
 
 class SuChrootWrapper:
 
-    def __init__(self, path, arch, suwrapper):
-        self.path = path
-        self.arch = arch
+    def __init__(self, root, suwrapper):
+        self.root = root
         self.suwrapper = suwrapper
 
     def add_user(self, username, uid, gid):
-        return self.suwrapper.add_user(username, uid, gid, self.path)
+        return self.suwrapper.add_user(username, uid, gid, self.root.path)
 
     def run_package_manager(self, pmname, pmargs, outputlogger=None):
         return self.suwrapper.run_package_manager(pmname, pmargs,
-                root=self.path, arch=self.arch, outputlogger=outputlogger)
+                root=self.root.path, arch=self.root.arch, outputlogger=outputlogger)
 
     def run_as(self, args, user, timeout=None, outputlogger=None):
-        return self.suwrapper.run_as(args, user=user, root=self.path,
-                arch=self.arch, timeout=timeout, outputlogger=outputlogger)
+        return self.suwrapper.run_as(args, user=user, root=self.root.path,
+                arch=self.root.arch, timeout=timeout, outputlogger=outputlogger)
 
     def post_root_command(self):
-        return self.suwrapper.post_root_command(root=self.path, arch=self.arch)
+        return self.suwrapper.post_root_command(root=self.root.path,
+                arch=self.root.arch)
 
     def interactive_prepare_conf(self, username):
-        return self.suwrapper.interactive_prepare_conf(username, root=self.path,
-                arch=self.arch)
+        return self.suwrapper.interactive_prepare_conf(username, root=self.root.path,
+                arch=self.root.arch)
 
     def interactive_shell(self, username):
-        return self.suwrapper.interactive_shell(username, root=self.path,
-                arch=self.arch)
+        return self.suwrapper.interactive_shell(username, root=self.root.path,
+                arch=self.root.arch)
 
     def __getattr__(self, name):
         return getattr(self.suwrapper, name)

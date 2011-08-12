@@ -36,12 +36,12 @@ class JurtFacade:
     def target_names(self):
         return self.targets.keys()
 
-    def shell(self, targetname=None, latest=False, id=None):
+    def shell(self, targetname=None, latest=False, forcenew=False, id=None):
         target = self._get_target(targetname)
-        target.shell(id, latest=latest)
+        target.shell(id=id, forcenew=forcenew, latest=latest)
 
     def put(self, files, targetname=None, latest=False, id=None):
-        target = self._get_target(targetname)
+        target = self._get_target(targetname, latest=latest)
         target.put(files, id=id, latest=latest)
 
     def check_permissions(self, interactive=True):

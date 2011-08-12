@@ -111,7 +111,7 @@ class Builder:
             timeout=None):
         root = self.rootmanager.create_new(self.root_name(id, sourceid, path),
                 self.packagemanager, self.repos, logstore)
-        root.mount()
+        root.activate()
         try:
             username, uid = self.build_user_info()
             homedir = self.build_user_home(username)
@@ -142,7 +142,7 @@ class Builder:
             root.copy_out(builtpaths, builtdest) # FIXME set ownership
         finally:
             try:
-                root.umount()
+                root.deactivate()
             except:
                 sys.stderr.write("\nWARNING WARNING: something bad happened "
                         "while unmouting root, things were possibly left "
@@ -238,7 +238,7 @@ class Builder:
         else:
             root = self.rootmanager.create_new(id, self.packagemanager,
                     self.repos, logstore)
-        root.mount()
+        root.activate()
         try:
             username, uid = self.build_user_info()
             if not existing and not latest:
@@ -251,7 +251,7 @@ class Builder:
                 self.packagemanager.build_prepare(root, homedir, username, uid)
             root.interactive_shell(username)
         finally:
-            root.umount()
+            root.deactivate()
 
     def set_interactive(self):
         self.interactive = True
