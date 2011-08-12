@@ -452,7 +452,9 @@ class ChrootRootManager(RootManager):
             if os.path.exists(path):
                 names = os.listdir(path)
                 for name in names:
-                    yield name
+                    if (not name.startswith(".") and
+                            os.path.isdir(os.path.join(path, name))):
+                        yield name
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
