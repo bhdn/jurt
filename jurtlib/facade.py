@@ -40,6 +40,12 @@ class JurtFacade:
         target = self._get_target(targetname)
         target.shell(id=id, forcenew=forcenew, latest=latest)
 
+    def list_roots(self):
+        targets = self.targets.values()
+        if targets:
+            for name in targets[0].list_roots():
+                yield name
+
     def put(self, files, targetname=None, latest=False, id=None):
         target = self._get_target(targetname, latest=latest)
         target.put(files, id=id, latest=latest)

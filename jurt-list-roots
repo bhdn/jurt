@@ -1,0 +1,19 @@
+#!/usr/bin/python
+from jurtlib.command import JurtCommand, CliError
+
+DESCR = """\
+Lists roots available to be used on jurt-shell -i <ID>
+"""
+
+class ListRoots(JurtCommand):
+
+    descr = DESCR
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+
+    def run(self):
+        for name in self.jurt.list_roots():
+            print name
+
+ListRoots().main()

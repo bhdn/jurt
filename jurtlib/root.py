@@ -109,6 +109,9 @@ class RootManager(object):
     def activate_root(self, root):
         raise NotImplementedError
 
+    def list_roots(self):
+        raise NotImplementedError
+
 class ChrootSpool:
 
     def __init__(self, path, repopath):
@@ -442,6 +445,14 @@ class ChrootRootManager(RootManager):
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
         return chroot
+
+    def list_roots(self):
+        for m in (self._active_path, self._old_path):
+            path = m("") # duh
+            if os.path.exists(path):
+                names = os.listdir(path)
+                for name in names:
+                    yield name
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)

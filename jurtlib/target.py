@@ -88,6 +88,10 @@ class Target:
         for file in files:
             root.copy_in(file, homedir, uid=uid)
 
+    def list_roots(self):
+        for name in self.rootmanager.list_roots():
+            yield name
+
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()
         self.rootmanager.test_sudo(interactive)
