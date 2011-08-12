@@ -85,7 +85,7 @@ class RootManager(object):
     def load_config(class_, suwrapper, rootconf, globalconf):
         raise NotImplementedError
 
-    def create_new(self, name, packagemanager, repos, logger):
+    def create_new(self, name, packagemanager, repos, logger, interactive):
         raise NotImplementedError
 
     def su(self):
@@ -124,11 +124,12 @@ class ChrootSpool:
 
 class Chroot(Root):
     
-    def __init__(self, manager, path, arch, state=Temp):
+    def __init__(self, manager, path, arch, state=Temp, interactive=False):
         self.manager = manager
         self.path = path
         self.arch = arch
         self.state = state
+        self.interactive = interactive
         self.chrootsu = SuChrootWrapper(self, self.manager.su())
 
     def add_user(self, username, uid):
@@ -235,6 +236,8 @@ class ChrootRootManager(RootManager):
         oldstatedir = rootconf.old_roots_dir
         tempstatedir = rootconf.temp_roots_dir
         activestatedir = rootconf.active_roots_dir
+        latestsuffix_build = rootconf.latest_build_suffix
+        latestsuffix_interactive = rootconf.latest_interactive_suffix
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -248,11 +251,14 @@ class ChrootRootManager(RootManager):
             activestatedir=activestatedir,
             tempstatedir=tempstatedir,
             oldstatedir=oldstatedir,
-            keepstatedir=keepstatedir)
+            keepstatedir=keepstatedir,
+            latestsuffix_build=latestsuffix_build,
+            latestsuffix_interactive=latestsuffix_interactive)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, interactivepkgs,
-            activestatedir, tempstatedir, oldstatedir, keepstatedir):
+            activestatedir, tempstatedir, oldstatedir, keepstatedir,
+            latestsuffix_build, latestsuffix_interactive):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -268,6 +274,8 @@ class ChrootRootManager(RootManager):
         self.keepstatedir = keepstatedir
         self.oldstatedir = oldstatedir
         self.tempstatedir = tempstatedir
+        self.latestsuffix_build = latestsuffix_build
+        self.latestsuffix_interactive = latestsuffix_interactive
 
     def su(self):
         return self.suwrapper
@@ -302,25 +310,29 @@ class ChrootRootManager(RootManager):
             arch = self.arch
         return arch
 
-    def _latest_link_name(self):
+    def _latest_link_name(self, interactive):
         username, _ = my_username()
-        name = username + "-latest"
+        if interactive:
+            suffix = self.latestsuffix_interactive
+        else:
+            suffix = self.latestsuffix_build
+        name = username + suffix
         return name
 
-    def _latest_path(self):
-        return os.path.join(self.topdir, self._latest_link_name())
+    def _latest_path(self, interactive):
+        return os.path.join(self.topdir, self._latest_link_name(interactive))
 
-    def _update_latest_link(self, state, rootpath):
+    def _update_latest_link(self, state, rootpath, interactive=False):
         rootname = os.path.basename(rootpath)
         # creates a relative link pointing to statename/rootid
         rootsubdir = self._root_path(state, rootname)
         comps = os.path.abspath(rootsubdir).rsplit(os.path.sep, 2)
         relative = os.path.sep.join(comps[-2:])
-        util.replace_link(self._latest_path(), relative)
+        util.replace_link(self._latest_path(interactive), relative)
 
-    def _resolve_latest_link(self):
+    def _resolve_latest_link(self, interactive=False):
         # FIXME FIXME handle broken or unexising link!
-        target = os.readlink(self._latest_path())
+        target = os.readlink(self._latest_path(interactive))
         # expects a link pointing to statename/rootid
         fields = target.rsplit(os.path.sep, 2)
         if len(fields) < 2:
@@ -379,13 +391,14 @@ class ChrootRootManager(RootManager):
         if "/" in name:
             raise ChrootError, "invalid root name: %s" % (name)
 
-    def create_new(self, name, packagemanager, repos, logger):
+    def create_new(self, name, packagemanager, repos, logger,
+            interactive=False):
         self._check_new_root_name(name)
         path = self._temp_path(name)
         self.su().mkdir(path)
         packagemanager.create_root(self.suwrapper, repos, path, logger)
         arch = self._root_arch(packagemanager)
-        chroot = Chroot(self, path, arch)
+        chroot = Chroot(self, path, arch, interactive=interactive)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
         return chroot
@@ -406,7 +419,8 @@ class ChrootRootManager(RootManager):
             dest = self._active_path(name)
             self._move_root(root, dest)
             root.state = Active
-            self._update_latest_link(root.state, root.path)
+            self._update_latest_link(root.state, root.path,
+                    root.interactive)
 
     def deactivate_root(self, root):
         if root.state != Old:
@@ -415,17 +429,18 @@ class ChrootRootManager(RootManager):
             dest = self._old_path(name)
             self._move_root(root, dest)
             root.state = Old
-            self._update_latest_link(root.state, root.path)
+            self._update_latest_link(root.state, root.path,
+                    root.interactive)
 
-    def get_root_by_name(self, name, packagemanager):
+    def get_root_by_name(self, name, packagemanager, interactive=False):
         if name is None:
-            state, path = self._resolve_latest_link()
+            state, path = self._resolve_latest_link(interactive)
         else:
             state, path = self._existing_root(name)
         if path is None or not os.path.exists(path):
             raise RootError, "root not found: %s" % (name)
         arch = self._root_arch(packagemanager)
-        chroot = Chroot(self, path, arch, state)
+        chroot = Chroot(self, path, arch, state, interactive)
         return chroot
 
     def test_sudo(self, interactive=True):
@@ -487,7 +502,8 @@ class CompressedChrootManager(ChrootRootManager):
             raise RootError, ("command failed:\n%s\n%s" % (cmdline,
                 output))
 
-    def create_new(self, name, packagemanager, repos, logstore):
+    def create_new(self, name, packagemanager, repos, logstore,
+            interactive=False):
         self._check_new_root_name(name)
         cachepath = os.path.join(self.cachedir, self.targetname +
                 self.cacheext)
@@ -496,7 +512,7 @@ class CompressedChrootManager(ChrootRootManager):
             if not os.path.exists(self.cachedir):
                 self.su().mkdir(self.cachedir)
             chroot = ChrootRootManager.create_new(self, name,
-                    packagemanager, repos, logstore)
+                    packagemanager, repos, logstore, interactive)
             # suwrapper already takes care of temporary naming
             logger.debug("compressing %s into %s" % (chroot.path,
                 cachepath))
@@ -504,7 +520,8 @@ class CompressedChrootManager(ChrootRootManager):
         else:
             path = self._root_path(Temp, name)
             self.su().mkdir(path)
-            chroot = Chroot(self, path, self._root_arch(packagemanager))
+            chroot = Chroot(self, path, self._root_arch(packagemanager),
+                    interactive=interactive)
             logger.debug("decompressing %s into %s" % (cachepath, path))
             self.suwrapper.decompress_root(cachepath, path)
         return chroot
@@ -542,18 +559,20 @@ class BtrfsChrootManager(ChrootRootManager):
         self.delsvcmd = delsvcmd
         self.targetname = targetname
 
-    def create_new(self, name, packagemanager, repos, logstore):
+    def create_new(self, name, packagemanager, repos, logstore,
+            interactive=False):
         self._check_new_root_name(name)
         templatepath = os.path.join(self.topdir, self.targetname)
         rootpath = self._root_path(Temp, name)
         if not os.path.exists(templatepath):
             self.su().btrfs_create(rootpath)
             root = ChrootRootManager.create_new(self, name,
-                    packagemanager, repos, logstore)
+                    packagemanager, repos, logstore, interactive)
             self.su().btrfs_snapshot(rootpath, templatepath)
         else:
             self.su().btrfs_snapshot(templatepath, rootpath)
-            root = Chroot(self, rootpath, self._root_arch(packagemanager))
+            root = Chroot(self, rootpath, self._root_arch(packagemanager),
+                    interactive=interactive)
         return root
 
 root_managers = Registry("root type")

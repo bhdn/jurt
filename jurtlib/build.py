@@ -56,7 +56,7 @@ class Builder:
                 deliverylogext=buildconf.delivery_log_file_ext,
                 logcompresscmd=logcompresscmd,
                 packagesdirname=buildconf.packages_dir_name,
-                latestname=buildconf.latest_link_name)
+                latestname=buildconf.latest_home_link_name)
 
     def __init__(self, rootmanager, packagemanager, repos, spooldir,
             donedir, faildir, builduser, builderhome, useruid, idtimefmt,
@@ -234,10 +234,10 @@ class Builder:
             if existing:
                 name = id
             root = self.rootmanager.get_root_by_name(name,
-                    self.packagemanager)
+                    self.packagemanager, interactive=True)
         else:
             root = self.rootmanager.create_new(id, self.packagemanager,
-                    self.repos, logstore)
+                    self.repos, logstore, interactive=True)
         root.activate()
         try:
             username, uid = self.build_user_info()
