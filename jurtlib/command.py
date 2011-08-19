@@ -99,6 +99,6 @@ class JurtCommand(object):
             self.run()
         except Error, e:
             sys.stderr.write("error: %s\n" % (e))
-            sys.exit(1)
+            sys.exit(2)
         except KeyboardInterrupt:
             sys.stderr.write("interrupted\n")
