@@ -4,6 +4,9 @@ from jurtlib.command import JurtCommand, CliError
 
 DESCR = """Builds a set of packages
 
+Built packages will be added into a temporary repository so that they can
+be used as build dependencies by those that are processed afterwards.
+
 To list the targets, use jurt-list-targets.
 
 To see the configuration used by jurt, use jurt-showrc.
