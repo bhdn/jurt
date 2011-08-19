@@ -109,6 +109,8 @@ class Builder:
 
     def build_one(self, id, sourceid, path, logstore, spool, stage=None,
             timeout=None):
+        logger.info("working on %s", sourceid)
+        logger.info("preparing root")
         root = self.rootmanager.create_new(self.root_name(id, sourceid, path),
                 self.packagemanager, self.repos, logstore)
         root.activate()
@@ -120,10 +122,12 @@ class Builder:
             insidepath = root.copy_in(path, homedir, self.useruid)
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
+            logger.info("installing build-deps")
             self.packagemanager.setup_repositories(root, self.repos,
                     logstore, spool)
             self.packagemanager.install_build_deps(insidepath, root, self.repos,
                     logstore, spool)
+            logger.info("building")
             (package, success, builtpaths) = \
                     self.packagemanager.build_source(srcpath, root, logstore,
                             username, homedir, spool, stage, timeout)

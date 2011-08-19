@@ -41,6 +41,7 @@ class JurtCommand(object):
         parser.set_description(self.descr)
         parser.set_defaults(config_options={})
         parser.add_option("-v", "--verbose", action="store_true", default=False)
+        parser.add_option("-q", "--quiet", action="store_true", default=False)
         parser.add_option("-o", "--option", type="string", action="callback",
                 callback=parse_option,
                 help="set one configuration option in the form opt=val")
@@ -69,6 +70,8 @@ class JurtCommand(object):
     def setup_logging(self, config, opts, args):
         if opts.verbose:
             level = logging.DEBUG
+        elif opts.quiet:
+            level = logging.WARN
         else:
             level = logging.INFO
         # had to change the syntax in order to not conflict with
