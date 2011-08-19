@@ -46,7 +46,7 @@ class Root(object):
     def copy_out(self, sourcepaths, dstpath):
         raise NotImplementedError
 
-    def mkdir(self, path, uid=None, gid=None, mode=None):
+    def mkdir(self, path_or_paths, uid=None, gid=None, mode=None):
         raise NotImplementedError
 
     def execute(self, command):
@@ -152,13 +152,16 @@ class Chroot(Root):
             mode="0644"):
         realsources = [os.path.abspath(self.path + "/" + path)
             for path in sourcepaths]
-        for source in realsources:
-            self.manager.su().copyout(source, dstpath, uid=uid, gid=gid,
-                    mode=mode)
+        self.manager.su().copyout(realsources, dstpath, uid=uid, gid=gid,
+                mode=mode)
 
-    def mkdir(self, path, uid=None, gid=None, mode="0755"):
-        realdestpath = os.path.abspath(self.path + "/" + path)
-        self.manager.su().mkdir(realdestpath, uid=uid, gid=gid, mode=mode)
+    def mkdir(self, path_or_paths, uid=None, gid=None, mode="0755"):
+        if isinstance(path_or_paths, basestring):
+            paths = [path_or_paths]
+        else:
+            paths = path_or_paths
+        realpaths = [os.path.abspath(self.path + "/" + path) for path in paths]
+        self.manager.su().mkdir(realpaths, uid=uid, gid=gid, mode=mode)
 
     def su(self):
         #TODO kill su()
@@ -200,14 +203,10 @@ class Chroot(Root):
 
     def activate(self):
         self.manager.activate_root(self)
-        self.manager.su().mount("proc", self.path, self.arch)
-        self.manager.su().mount("sys", self.path, self.arch)
-        self.manager.su().mount("pts", self.path, self.arch)
+        self.manager.su().mount_virtual_filesystems(self.path, self.arch)
 
     def deactivate(self):
-        self.manager.su().umount("pts", self.path, self.arch)
-        self.manager.su().umount("sys", self.path, self.arch)
-        self.manager.su().umount("proc", self.path, self.arch)
+        self.manager.su().umount_virtual_filesystems(self.path, self.arch)
         self.manager.deactivate_root(self)
 
 class ChrootRootManager(RootManager):

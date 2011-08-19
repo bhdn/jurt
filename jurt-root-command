@@ -2,6 +2,7 @@
 import sys
 import os
 import shlex
+from jurtlib import Error, CommandError
 from jurtlib.command import JurtCommand, CliError
 
 MOUNT_TYPES = {
@@ -41,18 +42,71 @@ class RootCommand(JurtCommand):
         parser.add_option("--ignore-errors", default=False,
                 action="store_true",
                 help="Command execution timeout")
+        parser.add_option("--agent", default=False, action="store_true",
+                help="Runs in agent mode")
+        parser.add_option("--cookie", type="string", default=None,
+                help=("Set the cookie to use as prefix in control "
+                    "output"))
 
     def config_files(self, config):
         return [config.conf.system_file]
 
     def run(self):
+        if self.opts.agent:
+            self._run_as_agent()
+        else:
+            self._handle_command()
+
+    def _run_as_agent(self):
+        import shlex
+        import select
+
+        if self.opts.cookie is None:
+            raise CliError, ("the option --cookie is required when "
+                    "running in agent mode")
+        cookiepart = "%s " % (self.opts.cookie)
+        sys.stderr.write("waiting for commands\n")
+        while True:
+            rl, wl, xl = select.select([sys.stdin.fileno()], [],
+                    [sys.stdin.fileno()])
+            if rl:
+                line = sys.stdin.readline()
+                if not line:
+                    # we'd better be dead as nothing will arrive for us
+                    return
+                else:
+                    cmdargs = shlex.split(line)
+                    parser = self.create_parser()
+                    self.init_parser(parser)
+                    self.opts, self.args[:] = self.parse_args(parser, cmdargs)
+                    try:
+                        try:
+                            self._handle_command()
+                        except CommandError, e:
+                            sys.stderr.write("%sERROR %d %s\n" %
+                                    (cookiepart, e.returncode, e))
+                        except Error, e:
+                            sys.stderr.write("%sERROR %s\n" %
+                                    (cookiepart, e))
+                        else:
+                            sys.stderr.write("%sOK\n" % (cookiepart))
+                        sys.stderr.flush()
+                    except IOError, e:
+                        if e.errno == 32: # broken pipe
+                            return
+                        raise
+
+    def _handle_command(self):
         if not self.opts.type:
             raise CliError, "--pm is mandatory"
         mname = "cmd_" + self.opts.type
         try:
             getattr(self, mname)()
         except AttributeError:
-            raise CliError, "invalid operation type: %s" % self.opts.type
+            etype, exc, tb = sys.exc_info()
+            if tb.tb_next is None:
+                raise CliError, "invalid operation type: %s" % self.opts.type
+            raise
 
     def _requires_target(f):
         def w(self):
@@ -113,7 +167,8 @@ class RootCommand(JurtCommand):
                     else:
                         if error:
                             sys.stderr.write(msg + "\n")
-                        sys.exit(p.returncode)
+                        raise CommandError(p.returncode,
+                                subprocess.list2cmdline(allcmd), "")
 
     @_requires_target
     def cmd_runpm(self):
@@ -161,12 +216,13 @@ class RootCommand(JurtCommand):
     def cmd_copyout(self):
         if len(self.args) < 2:
             raise CliError, "copy requires two operands"
-        source = self.args[0]
-        dest = self.args[1]
-        self.target.rootmanager.check_valid_subdir(source)
+        sources = self.args[:-1]
+        dest = self.args[-1]
+        for source in sources:
+            self.target.rootmanager.check_valid_subdir(source)
         self.target.rootmanager.check_valid_outdir(dest)
         cmd = self._install_cmd()
-        cmd.append(source)
+        cmd.extend(sources)
         cmd.append(dest)
         if not self.opts.dry_run:
             self._exec(cmd)
@@ -234,19 +290,20 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
-    def cmd_mount(self):
-        fsname, devpath, mountpoint = self._mount_info()
-        args = ["mount", "-t", fsname, devpath, mountpoint]
-        if not self.opts.dry_run:
-            self._exec(args)
+    def cmd_mountall(self):
+        # FIXME allow configuring filesystems to be mounted
+        for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
+            args = ["mount", "-t", fsname, devpath, mountpoint]
+            if not self.opts.dry_run:
+                self._exec(args)
 
     @_requires_target
     @_requires_root
-    def cmd_umount(self):
-        _, _, mountpoint = self._mount_info()
-        args = ["umount", mountpoint]
-        if not self.opts.dry_run:
-            self._exec(args)
+    def cmd_umountall(self):
+        for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
+            args = ["umount", mountpoint]
+            if not self.opts.dry_run:
+                self._exec(args)
 
     def _tmp_cachepath(self, cachepath):
         import tempfile
@@ -309,7 +366,12 @@ class RootCommand(JurtCommand):
         cmdline = template_expand(rawcmd, env)
         args.extend(shlex.split(cmdline))
         if not self.opts.dry_run:
-            self._exec(args, error=False, interactive=True)
+            try:
+                self._exec(args, error=False, exit=False, interactive=True)
+            except CommandError, e:
+                if e.returncode == 127:
+                    raise
+                # else: it may simply be and 'exit' from the shell
 
     @_requires_target
     @_requires_root
@@ -331,8 +393,7 @@ class RootCommand(JurtCommand):
 
     def cmd_test(self):
         if os.geteuid() != 0:
-            sys.stderr.write("error: i am not root\n")
-            sys.exit(1)
+            raise Error, "i am not root"
 
     @_requires_target
     def cmd_btrfssnapshot(self):

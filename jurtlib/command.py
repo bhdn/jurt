@@ -46,6 +46,9 @@ class JurtCommand(object):
                 callback=parse_option,
                 help="set one configuration option in the form opt=val")
 
+    def parse_args(self, parser, args):
+        return parser.parse_args(args)
+
     def create_config(self):
         config = JurtConfig()
         return config
@@ -87,7 +90,7 @@ class JurtCommand(object):
             parser = self.create_parser()
             config = self.create_config()
             self.init_parser(parser)
-            opts, args = parser.parse_args(sys.argv[1:])
+            opts, args = self.parse_args(parser, sys.argv[1:])
             self.load_config_files(config)
             self.update_config(config, opts, args)
             self.setup_logging(config, opts, args)

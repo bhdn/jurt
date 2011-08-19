@@ -313,13 +313,12 @@ class URPMIPackageManager(PackageManager):
 
     def build_prepare(self, root, homedir, username, uid):
         topdir = self._topdir(homedir)
-        logger.debug("creating RPM topdir directory at %s" % (topdir))
-        root.mkdir(topdir, uid=uid)
-        logger.debug("creating RPM build directories: %s",
-                " ".join(self.rpmsubdirs))
-        for name in self.rpmsubdirs:
-            path = os.path.join(topdir, name)
-            root.mkdir(path, uid=uid)
+        dirs = [topdir]
+        dirs.extend((os.path.join(topdir, name)
+                        for name in self.rpmsubdirs))
+        logger.debug("creating RPM build directories on %s: %s",
+                topdir, " ".join(self.rpmsubdirs))
+        root.mkdir(dirs, uid=uid)
         packager = self._get_packager()
         logger.debug("using %s as packager" % (packager))
         tf = tempfile.NamedTemporaryFile()
