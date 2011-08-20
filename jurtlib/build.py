@@ -139,7 +139,8 @@ class Builder:
             if not os.path.exists(builtdest):
                 logger.debug("created %s" % (builtdest))
                 os.makedirs(builtdest)
-            root.copy_out(builtpaths, builtdest) # FIXME set ownership
+            if builtpaths:
+                root.copy_out(builtpaths, builtdest) # FIXME set ownership
         finally:
             try:
                 root.deactivate()
