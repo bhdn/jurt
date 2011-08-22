@@ -385,17 +385,17 @@ class ChrootRootManager(RootManager):
             if not os.path.exists(statepath):
                 raise ChrootError, "missing roots directory: %s" % (statepath)
 
-    def _check_new_root_name(self, name):
+    def _check_new_root_name(self, name, forcenew=False):
         state, path = self._existing_root(name)
-        if state is not None:
+        if state is not None and (state is not Temp and forcenew):
             raise ChrootError, ("the root name %s conflicts with existing "
                     "root at %s" % (name, path))
         if "/" in name:
             raise ChrootError, "invalid root name: %s" % (name)
 
     def create_new(self, name, packagemanager, repos, logger,
-            interactive=False):
-        self._check_new_root_name(name)
+            interactive=False, forcenew=False):
+        self._check_new_root_name(name, forcenew)
         path = self._temp_path(name)
         self.su().mkdir(path)
         packagemanager.create_root(self.suwrapper, repos, path, logger)
@@ -579,7 +579,8 @@ class BtrfsChrootManager(ChrootRootManager):
         if not os.path.exists(templatepath):
             self.su().btrfs_create(rootpath)
             root = ChrootRootManager.create_new(self, name,
-                    packagemanager, repos, logstore, interactive)
+                    packagemanager, repos, logstore, interactive,
+                    forcenew=True)
             self.su().btrfs_snapshot(rootpath, templatepath)
         else:
             self.su().btrfs_snapshot(templatepath, rootpath)
