@@ -188,10 +188,6 @@ class Chroot(Root):
         return os.path.abspath(self.path + "/" + localpath)
 
     def interactive_prepare(self, username, uid, packagemanager, repos, logstore):
-        packages = self.manager.interactive_packages()
-        if packages:
-            packagemanager.install(packages, self, repos, logstore,
-                    "interactive-prepare")
         self.su().interactive_prepare_conf(username)
 
     def interactive_shell(self, username):
@@ -302,9 +298,6 @@ class ChrootRootManager(RootManager):
             cmd.extend(found)
         return cmd
 
-    def interactive_packages(self):
-        return self.interactivepkgs[:]
-
     def _root_arch(self, packagemanager):
         if self.arch == "host":
             arch = packagemanager.system_arch()
@@ -403,6 +396,9 @@ class ChrootRootManager(RootManager):
         chroot = Chroot(self, path, arch, interactive=interactive)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
+        if interactive:
+            packagemanager.install(self.interactivepkgs, chroot, repos,
+                    logger, "interactive-install")
         return chroot
 
     def _move_root(self, root, dest):
@@ -479,7 +475,18 @@ class ChrootRootManager(RootManager):
     def allows_interactive_shell(self):
         return self.allowshell
 
-class CompressedChrootManager(ChrootRootManager):
+class CachedManagerMixIn:
+
+    def _cache_base_path(self, interactive):
+        name = self.targetname
+        if interactive:
+            name += "-interactive"
+        else:
+            name += "-build"
+        return os.path.join(self.topdir, name)
+
+
+class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
 
     @classmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
@@ -517,8 +524,7 @@ class CompressedChrootManager(ChrootRootManager):
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):
         self._check_new_root_name(name)
-        cachepath = os.path.join(self.cachedir, self.targetname +
-                self.cacheext)
+        cachepath = self._cache_base_path(interactive) + self.cacheext
         if not os.path.exists(cachepath):
             logger.debug("%s not found, creating new root" % (cachepath))
             if not os.path.exists(self.cachedir):
@@ -546,7 +552,7 @@ class CompressedChrootManager(ChrootRootManager):
     def root_decompress_command(self, root, tarfile):
         return self.decompress_command + [tarfile, "-C", root, "."]
 
-class BtrfsChrootManager(ChrootRootManager):
+class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
 
     @classmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
@@ -574,7 +580,7 @@ class BtrfsChrootManager(ChrootRootManager):
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):
         self._check_new_root_name(name)
-        templatepath = os.path.join(self.topdir, self.targetname)
+        templatepath = self._cache_base_path(interactive)
         rootpath = self._root_path(Temp, name)
         if not os.path.exists(templatepath):
             self.su().btrfs_create(rootpath)
