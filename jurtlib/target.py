@@ -80,13 +80,14 @@ class Target:
         logstore = self.loggerfactory.get_logger(id)
         self.builder.shell(id, logstore, latest=latest, existing=existing)
 
-    def put(self, files, id=None, latest=False):
-        root = self.rootmanager.get_root_by_name(id, self.packagemanager)
+    def put(self, paths, id=None):
+        root = self.rootmanager.get_root_by_name(id, self.packagemanager,
+                interactive=True)
         self.builder.set_interactive()
         username, uid = self.builder.build_user_info()
         homedir = self.builder.build_user_home(username)
-        for file in files:
-            root.copy_in(file, homedir, uid=uid)
+        for path in paths:
+            root.copy_in(path, homedir, sameuser=True)
 
     def list_roots(self):
         for name in self.rootmanager.list_roots():

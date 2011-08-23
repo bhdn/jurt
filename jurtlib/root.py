@@ -140,12 +140,19 @@ class Chroot(Root):
                 arch=self.arch)
 
     def copy_in(self, localsrcpath, rootdestpath, uid=None, gid=None,
-            mode="0644", cheap=False):
+            mode="0644", cheap=False, sameuser=False):
         realdestpath = os.path.abspath(self.path + "/" + rootdestpath)
         destpath = os.path.join(rootdestpath,
                 os.path.basename(localsrcpath))
-        self.manager.su().copy(localsrcpath, realdestpath, uid=uid,
-                gid=gid, mode=mode)
+        if sameuser:
+            from jurtlib.cmd import run
+            args = self.manager.putcopycmd[:]
+            args.append(localsrcpath)
+            args.append(realdestpath)
+            run(args)
+        else:
+            self.manager.su().copy(localsrcpath, realdestpath, uid=uid,
+                    gid=gid, mode=mode)
         return destpath
 
     def copy_out(self, sourcepaths, dstpath, uid=None, gid=None,
@@ -236,6 +243,7 @@ class ChrootRootManager(RootManager):
         activestatedir = rootconf.active_roots_dir
         latestsuffix_build = rootconf.latest_build_suffix
         latestsuffix_interactive = rootconf.latest_interactive_suffix
+        putcopycmd = shlex.split(rootconf.put_copy_command)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -251,12 +259,13 @@ class ChrootRootManager(RootManager):
             oldstatedir=oldstatedir,
             keepstatedir=keepstatedir,
             latestsuffix_build=latestsuffix_build,
-            latestsuffix_interactive=latestsuffix_interactive)
+            latestsuffix_interactive=latestsuffix_interactive,
+            putcopycmd=putcopycmd)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, interactivepkgs,
             activestatedir, tempstatedir, oldstatedir, keepstatedir,
-            latestsuffix_build, latestsuffix_interactive):
+            latestsuffix_build, latestsuffix_interactive, putcopycmd):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -274,6 +283,7 @@ class ChrootRootManager(RootManager):
         self.tempstatedir = tempstatedir
         self.latestsuffix_build = latestsuffix_build
         self.latestsuffix_interactive = latestsuffix_interactive
+        self.putcopycmd = putcopycmd
 
     def su(self):
         return self.suwrapper

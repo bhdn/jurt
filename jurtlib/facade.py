@@ -46,9 +46,11 @@ class JurtFacade:
             for name in targets[0].list_roots():
                 yield name
 
-    def put(self, files, targetname=None, latest=False, id=None):
-        target = self._get_target(targetname, latest=latest)
-        target.put(files, id=id, latest=latest)
+    def put(self, paths, targetname=None, latest=False, id=None):
+        target = self._get_target(targetname)
+        if latest:
+            id = None
+        target.put(paths, id=id)
 
     def check_permissions(self, interactive=True):
         if not self.targets:
