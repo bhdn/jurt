@@ -26,7 +26,7 @@ class Build(JurtCommand):
                 help="Target packages are built for")
         parser.add_option("-b", "--stop", default=None, metavar="STAGE",
                 help="Stop at build stage STAGE and drops into a shell")
-        parser.add_option("-l", "--showlog",
+        parser.add_option("-s", "--showlog",
                 action="store_true", default=False,
                 help="Show the (also logged) output of build process")
         parser.add_option("-k", "--keeproot", default=False,
