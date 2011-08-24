@@ -22,12 +22,15 @@ class Spool:
                 if self.packagemanager.valid_binary(name))
 
     def put_packages(self, paths):
+        spoolpaths = []
         for path in paths:
             if self.packagemanager.valid_binary(path):
                 dest = os.path.join(self.path, os.path.basename(path))
+                spoolpaths.append(dest)
                 logger.debug("creating hardlink from %s to %s" % (path, dest))
                 os.link(path, dest)
             else:
                 logger.debug("not copying %s to the spool at %s" % (path,
                     self.path))
         self._update()
+        return spoolpaths

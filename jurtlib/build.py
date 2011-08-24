@@ -156,6 +156,8 @@ class Builder:
         localbuilt = []
         localbuilt = [os.path.join(builtdest, os.path.basename(path))
                 for path in builtpaths]
+        if success:
+            spool.put_packages(localbuilt)
         result = BuildResult(id, sourceid, package, success, localbuilt)
         return result
 
@@ -226,8 +228,6 @@ class Builder:
             sourceid = self._get_source_id(sourcepath)
             result = self.build_one(id, sourceid, sourcepath,
                     logstore.subpackage(sourceid), spool, stage, timeout)
-            if result.success:
-                spool.put_packages(result.builtpaths)
             results.append(result)
         logstore.done()
         self.deliver(id, results, logstore)
