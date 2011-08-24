@@ -61,14 +61,14 @@ class Target:
         self.permchecker = permchecker
 
     def build(self, paths, id=None, stage=None, timeout=None,
-            outputfile=None):
+            outputfile=None, keeproot=False):
         if id is None:
             id = self.builder.build_id()
         if stage:
             self.builder.set_interactive()
             self.packagemanager.check_build_stage(stage)
         logstore = self.loggerfactory.get_logger(id, outputfile)
-        self.builder.build(id, paths, logstore, stage, timeout)
+        self.builder.build(id, paths, logstore, stage, timeout, keeproot)
 
     def shell(self, id=None, forcenew=False, latest=False):
         existing = False

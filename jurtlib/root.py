@@ -72,6 +72,9 @@ class Root(object):
     def deactivate(self):
         raise NotImplementedError
 
+    def destroy(self):
+        raise NotImplementedError
+
     def interactive_prepare(self, username, uid, packagemanager, repos,
             logstore):
         raise NotImplementedError
@@ -212,6 +215,9 @@ class Chroot(Root):
         self.manager.su().umount_virtual_filesystems(self.path, self.arch)
         self.manager.deactivate_root(self)
 
+    def destroy(self, interactive=False):
+        self.manager.destroy(self, interactive)
+
 class ChrootRootManager(RootManager):
 
     @classmethod
@@ -244,6 +250,7 @@ class ChrootRootManager(RootManager):
         latestsuffix_build = rootconf.latest_build_suffix
         latestsuffix_interactive = rootconf.latest_interactive_suffix
         putcopycmd = shlex.split(rootconf.put_copy_command)
+        destroycmd = shlex.split(rootconf.chroot_destroy_command)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -260,12 +267,14 @@ class ChrootRootManager(RootManager):
             keepstatedir=keepstatedir,
             latestsuffix_build=latestsuffix_build,
             latestsuffix_interactive=latestsuffix_interactive,
-            putcopycmd=putcopycmd)
+            putcopycmd=putcopycmd,
+            destroycmd=destroycmd)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, interactivepkgs,
             activestatedir, tempstatedir, oldstatedir, keepstatedir,
-            latestsuffix_build, latestsuffix_interactive, putcopycmd):
+            latestsuffix_build, latestsuffix_interactive, putcopycmd,
+            destroycmd):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -284,6 +293,7 @@ class ChrootRootManager(RootManager):
         self.latestsuffix_build = latestsuffix_build
         self.latestsuffix_interactive = latestsuffix_interactive
         self.putcopycmd = putcopycmd
+        self.destroycmd = destroycmd
 
     def su(self):
         return self.suwrapper
@@ -461,6 +471,18 @@ class ChrootRootManager(RootManager):
                             os.path.isdir(os.path.join(path, name))):
                         yield name
 
+    def destroy(self, root, interactive):
+        if root.state is not Old:
+            raise RootError, ("cannot destroy a root that is still "
+                    "active: %s" % (root.path))
+        self.su().destroy_root(root.path)
+        path = self._latest_path(interactive)
+        if os.path.lexists(path):
+            pointedpath = os.path.abspath(os.readlink(path))
+            if os.path.abspath(root.path) == pointedpath:
+                logger.debug("removing -latest link: %s" % (path))
+                os.unlink(path)
+
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
 
@@ -586,6 +608,7 @@ class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
         self.snapsvcmd = snapsvcmd
         self.delsvcmd = delsvcmd
         self.targetname = targetname
+        self.destroycmd = delsvcmd
 
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):

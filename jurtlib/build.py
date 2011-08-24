@@ -108,7 +108,7 @@ class Builder:
         return path
 
     def build_one(self, id, sourceid, path, logstore, spool, stage=None,
-            timeout=None):
+            timeout=None, keeproot=False):
         logger.info("working on %s", sourceid)
         logger.info("preparing root")
         root = self.rootmanager.create_new(self.root_name(id, sourceid, path),
@@ -153,6 +153,8 @@ class Builder:
                         "while unmouting root, things were possibly left "
                         "mounted!\n")
                 raise
+            if not keeproot:
+                root.destroy(self.interactive)
         localbuilt = []
         localbuilt = [os.path.join(builtdest, os.path.basename(path))
                 for path in builtpaths]
@@ -219,7 +221,8 @@ class Builder:
         util.replace_link(latestpath, id)
         logger.info("done. check out %s" % (topdir))
 
-    def build(self, id, paths, logstore, stage=None, timeout=None):
+    def build(self, id, paths, logstore, stage=None, timeout=None,
+            keeproot=False):
         spool = self.create_spool(id)
         results = []
         for sourcepath in paths:
@@ -227,7 +230,8 @@ class Builder:
         for sourcepath in paths:
             sourceid = self._get_source_id(sourcepath)
             result = self.build_one(id, sourceid, sourcepath,
-                    logstore.subpackage(sourceid), spool, stage, timeout)
+                    logstore.subpackage(sourceid), spool, stage, timeout,
+                    keeproot)
             results.append(result)
         logstore.done()
         self.deliver(id, results, logstore)

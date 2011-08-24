@@ -29,6 +29,10 @@ class Build(JurtCommand):
         parser.add_option("-l", "--showlog",
                 action="store_true", default=False,
                 help="Show the (also logged) output of build process")
+        parser.add_option("-k", "--keeproot", default=False,
+                action="store_true",
+                help="Do not remove the root after build (useful to use "
+                    "with -l)")
         parser.add_option("-d", "--duration", default=None, type="int",
                 metavar="SECS",
                 help=("Limit in seconds of build time (when exceeded the "
@@ -43,6 +47,6 @@ class Build(JurtCommand):
             outputfile = None
         self.jurt.build(self.args, self.opts.target,
                 timeout=self.opts.duration, stage=self.opts.stop,
-                outputfile=outputfile)
+                outputfile=outputfile, keeproot=self.opts.keeproot)
 
 Build().main()

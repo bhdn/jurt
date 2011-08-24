@@ -108,6 +108,8 @@ rpm-macros-file = ~/.rpmmacros
 root-copy-files = /etc/hosts /etc/resolv.conf
 root-post-command = passwd -l root; touch /jurt-root
 put-copy-command = cp -a
+chroot-destroy-command = rm --recursive --one-file-system --preserve-root
+        --interactive=never
 
 interactive-packages = sudo
 allow-interactive-shell = yes

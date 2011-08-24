@@ -427,4 +427,14 @@ class RootCommand(JurtCommand):
         self.target.rootmanager.check_valid_subdir(dst)
         os.rename(src, dst) # TODO what else to check? permissions?
 
+    @_requires_target
+    def cmd_destroyroot(self):
+        if len(self.args) != 1:
+            raise CliError, "unexpected number of args"
+        self.target.rootmanager.check_valid_subdir(self.args[0])
+        # WARN: destroycmd is a specific of Chroot:
+        args = self.target.rootmanager.destroycmd[:]
+        args.append(self.args[0])
+        self._exec(args)
+
 RootCommand().main()

@@ -302,6 +302,9 @@ class JurtRootWrapper(SuWrapper):
         logger.debug("creating btrfs subvolume %s" % (dest))
         return self._exec_wrapper("btrfscreate", [dest])
 
+    def destroy_root(self, path):
+        return self._exec_wrapper("destroyroot", [path])
+
 class SuChrootWrapper:
 
     def __init__(self, root, suwrapper):
