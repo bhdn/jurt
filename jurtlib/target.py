@@ -60,7 +60,7 @@ class Target:
         self.loggerfactory = loggerfactory
         self.permchecker = permchecker
 
-    def build(self, paths, id=None, stage=None, timeout=None,
+    def build(self, paths, id=None, fresh=False, stage=None, timeout=None,
             outputfile=None, keeproot=False):
         if id is None:
             id = self.builder.build_id()
@@ -68,17 +68,15 @@ class Target:
             self.builder.set_interactive()
             self.packagemanager.check_build_stage(stage)
         logstore = self.loggerfactory.get_logger(id, outputfile)
-        self.builder.build(id, paths, logstore, stage, timeout, keeproot)
+        self.builder.build(id, fresh, paths, logstore, stage, timeout,
+                keeproot)
 
-    def shell(self, id=None, forcenew=False, latest=False):
-        existing = False
+    def shell(self, id=None, fresh=False):
         if id is None:
             id = self.builder.build_id() + "-shell"
-        elif not forcenew:
-            existing = True
         self.builder.set_interactive()
         logstore = self.loggerfactory.get_logger(id)
-        self.builder.shell(id, logstore, latest=latest, existing=existing)
+        self.builder.shell(id, fresh, logstore)
 
     def put(self, paths, id=None):
         root = self.rootmanager.get_root_by_name(id, self.packagemanager,

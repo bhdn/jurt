@@ -9,7 +9,7 @@ Creates a root and drops into a shell.
 
 class Shell(JurtCommand):
 
-    usage = "%prog -t TARGET [-l] [-i root-id]"
+    usage = "%prog -t TARGET [-l] [-i|-n root-id]"
     descr = DESCR
 
     def init_parser(self, parser):
@@ -27,15 +27,20 @@ class Shell(JurtCommand):
                     "(so that it can be reused with -i ID)"))
 
     def run(self):
-        if self.opts.latest and self.opts.id:
-            raise CliError, "-i and -l cannot be used together"
-        if self.opts.newid:
-            id = self.opts.newid
-            forcenew = True
-        else:
+        if sum((self.opts.latest, bool(self.opts.id),
+                bool(self.opts.newid))) > 1:
+            raise CliError, "-i, -n and -l cannot be used together"
+        fresh = True
+        id = None
+        if self.opts.id:
+            fresh = False
             id = self.opts.id
-            forcenew = False
-        self.jurt.shell(self.opts.target, latest=self.opts.latest,
-                forcenew=forcenew, id=id)
+        if self.opts.latest:
+            id = "latest"
+            fresh = False
+        elif self.opts.newid:
+            id = self.opts.newid
+        # else: fresh = True
+        self.jurt.shell(self.opts.target, id, fresh)
 
 Shell().main()

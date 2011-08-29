@@ -107,12 +107,11 @@ class Builder:
         path = os.path.abspath(value)
         return path
 
-    def build_one(self, id, sourceid, path, logstore, spool, stage=None,
-            timeout=None, keeproot=False):
+    def build_one(self, id, fresh, sourceid, path, logstore, spool,
+            stage=None, timeout=None, keeproot=False):
         logger.info("working on %s", sourceid)
         logger.info("preparing root")
-        root = self.rootmanager.create_new(self.root_name(id, sourceid, path),
-                self.packagemanager, self.repos, logstore)
+        root = self._get_root(id, fresh, logstore, self.interactive)
         root.activate()
         try:
             username, uid = self.build_user_info()
@@ -221,15 +220,25 @@ class Builder:
         util.replace_link(latestpath, id)
         logger.info("done. check out %s" % (topdir))
 
-    def build(self, id, paths, logstore, stage=None, timeout=None,
+    def _get_root(self, id, fresh, logstore, interactive):
+        if fresh:
+            root = self.rootmanager.create_new(id, self.packagemanager,
+                    self.repos, logstore, interactive=interactive)
+        else:
+            root = self.rootmanager.get_root_by_name(id,
+                    self.packagemanager, interactive=interactive)
+        return root
+
+    def build(self, id, fresh, paths, logstore, stage=None, timeout=None,
             keeproot=False):
         spool = self.create_spool(id)
+        # TODO ^^^^^ think about unintended spool reuse
         results = []
         for sourcepath in paths:
             self.packagemanager.check_source_package(sourcepath)
         for sourcepath in paths:
             sourceid = self._get_source_id(sourcepath)
-            result = self.build_one(id, sourceid, sourcepath,
+            result = self.build_one(id, fresh, sourceid, sourcepath,
                     logstore.subpackage(sourceid), spool, stage, timeout,
                     keeproot)
             results.append(result)
@@ -237,20 +246,12 @@ class Builder:
         self.deliver(id, results, logstore)
         return results
 
-    def shell(self, id, logstore, latest=False, existing=False):
-        if latest or existing:
-            name = None
-            if existing:
-                name = id
-            root = self.rootmanager.get_root_by_name(name,
-                    self.packagemanager, interactive=True)
-        else:
-            root = self.rootmanager.create_new(id, self.packagemanager,
-                    self.repos, logstore, interactive=True)
+    def shell(self, id, fresh, logstore):
+        root = self._get_root(id, fresh, logstore, interactive=True)
         root.activate()
         try:
             username, uid = self.build_user_info()
-            if not existing and not latest:
+            if id != "latest" or fresh:
                 self.packagemanager.setup_repositories(root, self.repos,
                         logstore)
                 root.add_user(username, uid)

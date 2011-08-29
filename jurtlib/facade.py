@@ -26,19 +26,19 @@ class JurtFacade:
         target.check_permissions(False)
         return target
 
-    def build(self, paths, targetname=None, id=None, stage=None,
-            timeout=None, outputfile=None, keeproot=False):
+    def build(self, paths, targetname=None, id=None, fresh=False,
+            stage=None, timeout=None, outputfile=None, keeproot=False):
         """Builds a set of packages"""
         target = self._get_target(targetname)
-        target.build(paths, id=id, stage=stage, timeout=timeout,
-                outputfile=outputfile, keeproot=keeproot)
+        target.build(paths, id, fresh, stage, timeout, outputfile,
+                keeproot)
 
     def target_names(self):
         return self.targets.keys()
 
-    def shell(self, targetname=None, latest=False, forcenew=False, id=None):
+    def shell(self, targetname=None, id=None, fresh=False):
         target = self._get_target(targetname)
-        target.shell(id=id, forcenew=forcenew, latest=latest)
+        target.shell(id=id, fresh=fresh)
 
     def list_roots(self):
         targets = self.targets.values()

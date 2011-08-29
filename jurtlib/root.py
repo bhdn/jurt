@@ -451,7 +451,7 @@ class ChrootRootManager(RootManager):
                     root.interactive)
 
     def get_root_by_name(self, name, packagemanager, interactive=False):
-        if name is None:
+        if name == "latest":
             state, path = self._resolve_latest_link(interactive)
         else:
             state, path = self._existing_root(name)

@@ -33,6 +33,16 @@ class Build(JurtCommand):
                 action="store_true",
                 help="Do not remove the root after build (useful to use "
                     "with -l)")
+        parser.add_option("-i", "--id", default=None,
+                help=("Enter in an (supposedly) existing root named "
+                    "ID (see -l)"))
+        parser.add_option("-l", "--latest", default=False,
+                action="store_true",
+                help=("Use the latest created root (when -k is used "
+                      "beforehand)"))
+        parser.add_option("-n", "--newid", default=None, metavar="ID",
+                help=("Set the name of the root to be created "
+                    "(so that it can be reused with -i ID)"))
         parser.add_option("-d", "--duration", default=None, type="int",
                 metavar="SECS",
                 help=("Limit in seconds of build time (when exceeded the "
@@ -45,7 +55,21 @@ class Build(JurtCommand):
             outputfile = sys.stdout
         else:
             outputfile = None
-        self.jurt.build(self.args, self.opts.target,
+        if sum((self.opts.latest, bool(self.opts.id),
+                bool(self.opts.newid))) > 1:
+            raise CliError, "-i, -n and -l cannot be used together"
+        fresh = True
+        id = None
+        if self.opts.id:
+            fresh = False
+            id = self.opts.id
+        if self.opts.latest:
+            id = "latest"
+            fresh = False
+        elif self.opts.newid:
+            id = self.opts.newid
+        # else: fresh = True
+        self.jurt.build(self.args, self.opts.target, id, fresh,
                 timeout=self.opts.duration, stage=self.opts.stop,
                 outputfile=outputfile, keeproot=self.opts.keeproot)
 
