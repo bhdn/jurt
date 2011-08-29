@@ -110,7 +110,6 @@ class Builder:
     def build_one(self, id, fresh, sourceid, path, logstore, spool,
             stage=None, timeout=None, keeproot=False):
         logger.info("working on %s", sourceid)
-        logger.info("preparing root")
         root = self._get_root(id, fresh, logstore, self.interactive)
         root.activate()
         try:
@@ -222,9 +221,11 @@ class Builder:
 
     def _get_root(self, id, fresh, logstore, interactive):
         if fresh:
+            logger.info("creating root %s", id)
             root = self.rootmanager.create_new(id, self.packagemanager,
                     self.repos, logstore, interactive=interactive)
         else:
+            logger.info("preparing existing root")
             root = self.rootmanager.get_root_by_name(id,
                     self.packagemanager, interactive=interactive)
         return root
