@@ -78,7 +78,7 @@ class Target:
         logstore = self.loggerfactory.get_logger(id)
         self.builder.shell(id, fresh, logstore)
 
-    def put(self, paths, id=None):
+    def put(self, paths, id):
         root = self.rootmanager.get_root_by_name(id, self.packagemanager,
                 interactive=True)
         self.builder.set_interactive()
