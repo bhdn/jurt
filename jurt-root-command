@@ -5,6 +5,8 @@ import shlex
 from jurtlib import Error, CommandError
 from jurtlib.command import JurtCommand, CliError
 
+PROC_MOUNTS = "/proc/mounts"
+
 MOUNT_TYPES = {
         "proc": ("proc", "jurt-mounted-proc-for-you", "/proc"),
         "sys": ("sysfs", "jurt-mounted-sys-for-you", "/sys"),
@@ -289,22 +291,46 @@ class RootCommand(JurtCommand):
             raise CliError, "invalid mount type: %s" % (typename)
         return mountinfo
 
+    def _parse_proc_mounts(self):
+        if not os.path.exists(PROC_MOUNTS):
+            raise Error, "%s is needed when mounting" % (PROC_MOUNTS)
+        mounted = set()
+        with open(PROC_MOUNTS) as f:
+            for line in f:
+                line = line.strip()
+                if not line.startswith("#"):
+                    fields = line.split()
+                    if len(fields) > 1:
+                        # /proc/mounts represents spaces as \040; too lazy
+                        # for proper parsing:
+                        path = fields[1].replace("\\040", " ")
+                        mounted.add(os.path.abspath(path) + "/")
+        return frozenset(mounted)
+
     @_requires_target
     @_requires_root
     def cmd_mountall(self):
         # FIXME allow configuring filesystems to be mounted
+        mounted = self._parse_proc_mounts()
         for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
-            args = ["mount", "-t", fsname, devpath, mountpoint]
-            if not self.opts.dry_run:
-                self._exec(args)
+            absmntpoint = os.path.abspath(self.opts.root + "/" +
+                    mountpoint) + "/"
+            if absmntpoint not in mounted:
+                args = ["mount", "-t", fsname, devpath, mountpoint]
+                if not self.opts.dry_run:
+                    self._exec(args)
 
     @_requires_target
     @_requires_root
     def cmd_umountall(self):
+        mounted = self._parse_proc_mounts()
         for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
-            args = ["umount", mountpoint]
-            if not self.opts.dry_run:
-                self._exec(args)
+            absmntpoint = os.path.abspath(self.opts.root + "/" +
+                    mountpoint) + "/"
+            if absmntpoint in mounted:
+                args = ["umount", mountpoint]
+                if not self.opts.dry_run:
+                    self._exec(args)
 
     def _tmp_cachepath(self, cachepath):
         import tempfile
