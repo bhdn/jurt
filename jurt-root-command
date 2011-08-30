@@ -75,7 +75,7 @@ class RootCommand(JurtCommand):
                     # we'd better be dead as nothing will arrive for us
                     return
                 else:
-                    cmdargs = shlex.split(line)
+                    cmdargs = shlex.split(line)[1:]
                     parser = self.create_parser()
                     self.init_parser(parser)
                     self.opts, self.args[:] = self.parse_args(parser, cmdargs)
