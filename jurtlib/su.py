@@ -155,28 +155,29 @@ class JurtRootWrapper(SuWrapper):
             interactive=False):
         assert not (interactive and outputlogger)
 
-        cmd = self.sucmd[:]
-        cmd.extend(self.jurtrootcmd)
-        cmd.extend(("--type", type))
-        cmd.extend(("--target", self.targetname))
+        basecmd = self.jurtrootcmd[:]
+        basecmd.extend(("--type", type))
+        basecmd.extend(("--target", self.targetname))
         if timeout is not None:
-            cmd.extend(("--timeout", str(timeout)))
+            basecmd.extend(("--timeout", str(timeout)))
         if root is not None:
-            cmd.extend(("--root", root))
+            basecmd.extend(("--root", root))
         if arch is not None:
-            cmd.extend(("--arch", arch))
+            basecmd.extend(("--arch", arch))
         if ignoreerrors:
-            cmd.append("--ignore-errors")
-        cmd.extend(args)
+            basecmd.append("--ignore-errors")
+        basecmd.extend(args)
 
         if interactive:
-            cmdline = subprocess.list2cmdline(cmd)
-            proc = subprocess.Popen(args=cmd, shell=False, bufsize=-1)
+            fullcmd = self.sucmd[:]
+            fullcmd.extend(basecmd)
+            cmdline = subprocess.list2cmdline(fullcmd)
+            proc = subprocess.Popen(args=fullcmd, shell=False, bufsize=-1)
             proc.wait()
             returncode = proc.returncode
             output = "(interactive command, no output)"
         else:
-            cmdline = subprocess.list2cmdline(cmd[2:])
+            cmdline = subprocess.list2cmdline(basecmd)
             if outputlogger:
                 outputlogger.write(">>>> running privilleged agent: %s\n" % (cmdline))
                 outputlogger.flush()

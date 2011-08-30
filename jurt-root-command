@@ -8,7 +8,8 @@ from jurtlib.command import JurtCommand, CliError
 MOUNT_TYPES = {
         "proc": ("proc", "jurt-mounted-proc-for-you", "/proc"),
         "sys": ("sysfs", "jurt-mounted-sys-for-you", "/sys"),
-        "pts": ("devpts", "jurt-kindly-mounted-pts-for-you", "/dev/pts")}
+        "pts": ("devpts", "jurt-kindly-mounted-pts-for-you", "/dev/pts"),
+        "shm": ("tmpfs", "jurt-mounted-tmpfs-for-you", "/dev/shm")}
 
 class RootCommand(JurtCommand):
 
