@@ -99,7 +99,7 @@ class RootCommand(JurtCommand):
 
     def _handle_command(self):
         if not self.opts.type:
-            raise CliError, "--pm is mandatory"
+            raise CliError, "--type is mandatory"
         mname = "cmd_" + self.opts.type
         try:
             getattr(self, mname)()
