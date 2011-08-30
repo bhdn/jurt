@@ -21,6 +21,7 @@ setup(name="jurt",
                 "jurt-setup",
                 "jurt-test-sudo",
                 "jurt-list-targets",
+                "jurt-list-roots",
         ],
         data_files = [
             ('/etc/jurt/',
