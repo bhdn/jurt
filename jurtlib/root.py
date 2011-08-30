@@ -444,11 +444,15 @@ class ChrootRootManager(RootManager):
         if root.state != Old:
             self._check_state_dirs()
             name = os.path.basename(root.path)
-            dest = self._old_path(name)
-            self._move_root(root, dest)
-            root.state = Old
-            self._update_latest_link(root.state, root.path,
-                    root.interactive)
+            state, _ = self._existing_root(name)
+            if state == Active:
+                # else: the root has been moved by someone else, just
+                # forget about moving
+                dest = self._old_path(name)
+                self._move_root(root, dest)
+                root.state = Old
+                self._update_latest_link(root.state, root.path,
+                        root.interactive)
 
     def get_root_by_name(self, name, packagemanager, interactive=False):
         if name == "latest":
