@@ -7,12 +7,6 @@ from jurtlib.command import JurtCommand, CliError
 
 PROC_MOUNTS = "/proc/mounts"
 
-MOUNT_TYPES = {
-        "proc": ("proc", "jurt-mounted-proc-for-you", "/proc"),
-        "sys": ("sysfs", "jurt-mounted-sys-for-you", "/sys"),
-        "pts": ("devpts", "jurt-kindly-mounted-pts-for-you", "/dev/pts"),
-        "shm": ("tmpfs", "jurt-mounted-tmpfs-for-you", "/dev/shm")}
-
 class RootCommand(JurtCommand):
 
     descr = "Runs a command privilleged user"
@@ -312,11 +306,11 @@ class RootCommand(JurtCommand):
     def cmd_mountall(self):
         # FIXME allow configuring filesystems to be mounted
         mounted = self._parse_proc_mounts()
-        for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
+        for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
             absmntpoint = os.path.abspath(self.opts.root + "/" +
                     mountpoint) + "/"
             if absmntpoint not in mounted:
-                args = ["mount", "-t", fsname, devpath, mountpoint]
+                args = ["mount", "-o", options, "-t", fsname, devpath, mountpoint]
                 if not self.opts.dry_run:
                     self._exec(args)
 
@@ -324,7 +318,7 @@ class RootCommand(JurtCommand):
     @_requires_root
     def cmd_umountall(self):
         mounted = self._parse_proc_mounts()
-        for fsname, devpath, mountpoint in MOUNT_TYPES.itervalues():
+        for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
             absmntpoint = os.path.abspath(self.opts.root + "/" +
                     mountpoint) + "/"
             if absmntpoint in mounted:

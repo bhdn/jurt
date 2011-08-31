@@ -236,6 +236,18 @@ class ChrootRootManager(RootManager):
         return map
 
     @classmethod
+    def _parse_mount_points(class_, rawvalue):
+        mountpoints = []
+        for rawentry in rawvalue.split("|"):
+            fields = shlex.split(rawentry)
+            if len(fields) != 4:
+                logger.warn("expected 4 fields in mountpoint "
+                        "entry: %s", rawentry)
+            else:
+                mountpoints.append(fields)
+        return mountpoints
+
+    @classmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
         copyfiles = shlex.split(rootconf.root_copy_files)
         postcmd = rootconf.root_post_command.strip()
@@ -252,6 +264,7 @@ class ChrootRootManager(RootManager):
         putcopycmd = shlex.split(rootconf.put_copy_command)
         destroycmd = shlex.split(rootconf.chroot_destroy_command)
         targetfile = rootconf.chroot_target_file.strip()
+        mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -270,13 +283,14 @@ class ChrootRootManager(RootManager):
             latestsuffix_interactive=latestsuffix_interactive,
             putcopycmd=putcopycmd,
             destroycmd=destroycmd,
-            targetfile=targetfile)
+            targetfile=targetfile,
+            mountpoints=mountpoints)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, interactivepkgs,
             activestatedir, tempstatedir, oldstatedir, keepstatedir,
             latestsuffix_build, latestsuffix_interactive, putcopycmd,
-            destroycmd, targetfile):
+            destroycmd, targetfile, mountpoints):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -297,6 +311,7 @@ class ChrootRootManager(RootManager):
         self.putcopycmd = putcopycmd
         self.destroycmd = destroycmd
         self.targetfile = targetfile
+        self.mountpoints = mountpoints
 
     def su(self):
         return self.suwrapper
@@ -549,6 +564,10 @@ class ChrootRootManager(RootManager):
     # run as root
     def allows_interactive_shell(self):
         return self.allowshell
+
+    # run as root
+    def mount_points(self):
+        return self.mountpoints
 
 class CachedManagerMixIn:
 

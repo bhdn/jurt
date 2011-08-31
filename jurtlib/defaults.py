@@ -111,6 +111,13 @@ root-post-command = passwd -l root; touch /jurt-root
 put-copy-command = cp -a
 chroot-destroy-command = rm --recursive --one-file-system --preserve-root
         --interactive=never
+chroot-mountpoints-doc = list of virtual filesystems to be mounted when
+     entering a chroot, it uses | to separate mountpoints and the fields
+     are on the same order of fstab
+chroot-mountpoints = jurt-proc /proc proc defaults |
+    jurt-sysfs /sys sysfs defaults |
+    jurt-pts /dev/pts devpts defaults |
+    jurt-shm /dev/shm tmpfs defaults
 
 interactive-packages = sudo
 allow-interactive-shell = yes
