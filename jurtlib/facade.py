@@ -9,15 +9,22 @@ class JurtFacade:
         self.config = config
         self.targets = targetmod.load_targets(config)
 
-    def _get_target(self, name=None):
+    def _get_target(self, name=None, id=None, interactive=False):
         if not self.targets:
             raise SetupError, ("no build targets found, see %s" %
                     (self.config.conf.system_file))
         if name is None:
-            name = self.config.jurt.default_target
-            if name == targetmod.UNSET_DEFAULT_TARGET:
-                raise Error, "no target name provided and "\
-                        "no default target set in configuration"
+            if id:
+                for target in self.targets.itervalues():
+                    name = target.rootmanager.guess_target_name(id,
+                            interactive)
+                    if name:
+                        break
+            if name is None:
+                name = self.config.jurt.default_target
+                if name == targetmod.UNSET_DEFAULT_TARGET:
+                    raise Error, "no target name provided and "\
+                            "no default target set in configuration"
         try:
             target = self.targets[name]
         except KeyError:
@@ -29,7 +36,7 @@ class JurtFacade:
     def build(self, paths, targetname=None, id=None, fresh=False,
             stage=None, timeout=None, outputfile=None, keeproot=False):
         """Builds a set of packages"""
-        target = self._get_target(targetname)
+        target = self._get_target(targetname, id, interactive=bool(stage))
         target.build(paths, id, fresh, stage, timeout, outputfile,
                 keeproot)
 
@@ -37,7 +44,7 @@ class JurtFacade:
         return self.targets.keys()
 
     def shell(self, targetname=None, id=None, fresh=False):
-        target = self._get_target(targetname)
+        target = self._get_target(targetname, id, interactive=True)
         target.shell(id=id, fresh=fresh)
 
     def list_roots(self):
@@ -47,7 +54,7 @@ class JurtFacade:
                 yield name
 
     def put(self, paths, targetname, id):
-        target = self._get_target(targetname)
+        target = self._get_target(targetname, id)
         target.put(paths, id)
 
     def check_permissions(self, interactive=True):

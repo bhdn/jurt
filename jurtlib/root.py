@@ -251,6 +251,7 @@ class ChrootRootManager(RootManager):
         latestsuffix_interactive = rootconf.latest_interactive_suffix
         putcopycmd = shlex.split(rootconf.put_copy_command)
         destroycmd = shlex.split(rootconf.chroot_destroy_command)
+        targetfile = rootconf.chroot_target_file.strip()
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -268,13 +269,14 @@ class ChrootRootManager(RootManager):
             latestsuffix_build=latestsuffix_build,
             latestsuffix_interactive=latestsuffix_interactive,
             putcopycmd=putcopycmd,
-            destroycmd=destroycmd)
+            destroycmd=destroycmd,
+            targetfile=targetfile)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, interactivepkgs,
             activestatedir, tempstatedir, oldstatedir, keepstatedir,
             latestsuffix_build, latestsuffix_interactive, putcopycmd,
-            destroycmd):
+            destroycmd, targetfile):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -294,6 +296,7 @@ class ChrootRootManager(RootManager):
         self.latestsuffix_interactive = latestsuffix_interactive
         self.putcopycmd = putcopycmd
         self.destroycmd = destroycmd
+        self.targetfile = targetfile
 
     def su(self):
         return self.suwrapper
@@ -301,6 +304,14 @@ class ChrootRootManager(RootManager):
     def _copy_files_from_conf(self, root):
         for path in self.copyfiles:
             root.copy_in(path, os.path.dirname(path))
+
+    def _create_metadata_files(self, root):
+        from tempfile import NamedTemporaryFile
+        tf = NamedTemporaryFile()
+        tf.write(self.targetname + "\n")
+        tf.flush()
+        root.copy_in(tf.name, self.targetfile)
+        tf.close()
 
     def _execute_conf_command(self, root):
         if self.postcmd:
@@ -347,13 +358,22 @@ class ChrootRootManager(RootManager):
 
     def _resolve_latest_link(self, interactive=False):
         # FIXME FIXME handle broken or unexising link!
-        target = os.readlink(self._latest_path(interactive))
+        linkpath = self._latest_path(interactive)
+        if not os.path.lexists(linkpath):
+            logger.debug("latest link %s was not found", linkpath)
+            raise ChrootError, ("no information about the latest root "
+                     "was found")
+        target = os.readlink(linkpath)
+        logger.debug("latest link points to %s", target)
         # expects a link pointing to statename/rootid
         fields = target.rsplit(os.path.sep, 2)
         if len(fields) < 2:
             raise ChrootError, "invalid path name linked by %s" % (linkpath)
         statename = fields[-2]
         path = os.path.join(self.topdir, target)
+        if not os.path.exists(path):
+            raise ChrootError, ("it appears the latest root does not "
+                    "exist anymore: %s" % (path))
         return self._dir_to_state(statename), path
 
     def _state_path(self, dir, name):
@@ -380,16 +400,23 @@ class ChrootRootManager(RootManager):
     def _dir_to_state(self, dirname):
         return STATE_DIRS[dirname]
 
-    def _existing_root(self, name):
-        statedirs = ((Active, self._active_path(name)),
-                (Keep, self._keep_path(name)),
-                (Old, self._old_path(name)),
-                (Temp, self._temp_path(name)))
-        for state, dir in statedirs:
-            if os.path.exists(dir):
-                return state, dir
+    def _existing_root(self, name, required=False, interactive=False):
+        if name == "latest":
+            state_and_path = self._resolve_latest_link(interactive)
         else:
-            return None, None
+            statedirs = ((Active, self._active_path(name)),
+                    (Keep, self._keep_path(name)),
+                    (Old, self._old_path(name)),
+                    (Temp, self._temp_path(name)))
+            for state, dir in statedirs:
+                if os.path.exists(dir):
+                    state_and_path = state, dir
+                    break
+            else:
+                if required:
+                    raise ChrootError, "root not found: %s" % (name)
+                state_and_path = None, None
+        return state_and_path
 
     def _check_state_dirs(self):
         for m in (self._active_path, self._temp_path, self._keep_path,
@@ -399,12 +426,12 @@ class ChrootRootManager(RootManager):
                 raise ChrootError, "missing roots directory: %s" % (statepath)
 
     def _check_new_root_name(self, name, forcenew=False):
+        if "/" in name or name == "latest":
+            raise ChrootError, "invalid root name: %s" % (name)
         state, path = self._existing_root(name)
         if state is not None and (state is not Temp and forcenew):
             raise ChrootError, ("the root name %s conflicts with existing "
                     "root at %s" % (name, path))
-        if "/" in name:
-            raise ChrootError, "invalid root name: %s" % (name)
 
     def create_new(self, name, packagemanager, repos, logger,
             interactive=False, forcenew=False):
@@ -414,6 +441,7 @@ class ChrootRootManager(RootManager):
         packagemanager.create_root(self.suwrapper, repos, path, logger)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, interactive=interactive)
+        self._create_metadata_files(chroot)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
         if interactive:
@@ -455,12 +483,7 @@ class ChrootRootManager(RootManager):
                         root.interactive)
 
     def get_root_by_name(self, name, packagemanager, interactive=False):
-        if name == "latest":
-            state, path = self._resolve_latest_link(interactive)
-        else:
-            state, path = self._existing_root(name)
-        if path is None or not os.path.exists(path):
-            raise RootError, "root not found: %s" % (name)
+        state, path = self._existing_root(name, interactive=interactive)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
         return chroot
@@ -474,6 +497,22 @@ class ChrootRootManager(RootManager):
                     if (not name.startswith(".") and
                             os.path.isdir(os.path.join(path, name))):
                         yield name
+
+    def guess_target_name(self, name, interactive=False):
+        found = None
+        state, path = self._existing_root(name, interactive=interactive)
+        if path is not None:
+            confpath = os.path.abspath(path + os.path.sep +
+                    self.targetfile)
+            if os.path.exists(confpath):
+                logger.debug("reading %s to guess target name", confpath)
+                try:
+                    with open(confpath) as f:
+                        found = f.readline().strip()
+                except (IOError, OSError), e:
+                    logger.warn("cannot read target information "
+                            "inside chroot on %s: %s" % (confpath, e))
+        return found
 
     def destroy(self, root, interactive):
         if root.state is not Old:
