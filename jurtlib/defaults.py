@@ -134,7 +134,8 @@ btrfs-delete-subvol-command = %(btrfs-command)s subvolume delete
 [root]
 
 adduser-command = /usr/sbin/adduser
-chroot-command = /usr/bin/env -i /usr/sbin/chroot
+unshare-command = unshare --ipc --uts
+chroot-command = /usr/bin/env -i %(unshare-command)s -- /usr/sbin/chroot
 su-command = /bin/su -l
 su-for-post-command = %(su-command)s -c
 sudo-interactive-shell-command = sudo -i
