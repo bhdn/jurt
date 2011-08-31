@@ -124,12 +124,13 @@ class RootCommand(JurtCommand):
             return f(self)
         return w
 
-    def _exec(self, args, exit=True, error=True, interactive=False):
+    def _exec(self, args, exit=True, error=True, interactive=False,
+            allowchroot=True):
         import subprocess
         allcmd = []
         if self.opts.timeout is not None:
             allcmd.extend(("timeout", str(self.opts.timeout)))
-        if self.opts.root:
+        if self.opts.root and allowchroot:
             if self.opts.arch:
                 sysarch = self.target.packagemanager.system_arch()
                 if self.opts.arch != sysarch:
@@ -309,10 +310,20 @@ class RootCommand(JurtCommand):
         for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
             absmntpoint = os.path.abspath(self.opts.root + "/" +
                     mountpoint) + "/"
+            if not os.path.exists(absmntpoint):
+                try:
+                    os.mkdir(absmntpoint)
+                except (IOError, OSError), e:
+                    raise Error, "failed to create mountpoint: %s" % e
             if absmntpoint not in mounted:
-                args = ["mount", "-o", options, "-t", fsname, devpath, mountpoint]
+                if fsname == "bind":
+                    args = ["mount", "--rbind", devpath, absmntpoint]
+                    chroot = False
+                else:
+                    args = ["mount", "-o", options, "-t", fsname, devpath, mountpoint]
+                    chroot = True
                 if not self.opts.dry_run:
-                    self._exec(args)
+                    self._exec(args, allowchroot=chroot)
 
     @_requires_target
     @_requires_root
