@@ -20,6 +20,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 recursive-include jurtlib/ *.py
-include README jurt.conf
+include README LICENSE jurt.conf
 include jurt-suid.c
 include Makefile

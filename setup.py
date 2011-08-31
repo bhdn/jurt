@@ -48,7 +48,7 @@ setup(name="jurt",
             ('/etc/jurt/',
                 ['jurt.conf'] ),
             ('/usr/share/doc/jurt/',
-                ['README'])]
+                ['README', 'LICENSE'])]
     )
 
 
