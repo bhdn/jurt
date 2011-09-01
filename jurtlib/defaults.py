@@ -75,6 +75,7 @@ latest-interactive-suffix = -interactive-latest
 latest-home-link-name = latest
 packages-dir-name = packages
 chroot-target-file = /jurt-target
+chroot-interactive-file = /jurt-interactive
 chroot-compress-command = tar czf
 chroot-decompress-command = tar xzf
 chroot-cache-ext = .tar.gz

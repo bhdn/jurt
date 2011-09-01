@@ -294,6 +294,7 @@ class ChrootRootManager(RootManager):
         putcopycmd = shlex.split(rootconf.put_copy_command)
         destroycmd = shlex.split(rootconf.chroot_destroy_command)
         targetfile = rootconf.chroot_target_file.strip()
+        interactivefile = rootconf.chroot_interactive_file.strip()
         mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
         binds = class_._parse_binds(rootconf.chroot_binds)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
@@ -315,6 +316,7 @@ class ChrootRootManager(RootManager):
             putcopycmd=putcopycmd,
             destroycmd=destroycmd,
             targetfile=targetfile,
+            interactivefile=interactivefile,
             mountpoints=mountpoints,
             binds=binds)
 
@@ -322,7 +324,7 @@ class ChrootRootManager(RootManager):
             copyfiles, postcmd, allowshell, interactivepkgs,
             activestatedir, tempstatedir, oldstatedir, keepstatedir,
             latestsuffix_build, latestsuffix_interactive, putcopycmd,
-            destroycmd, targetfile, mountpoints, binds):
+            destroycmd, targetfile, interactivefile, mountpoints, binds):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -343,6 +345,7 @@ class ChrootRootManager(RootManager):
         self.putcopycmd = putcopycmd
         self.destroycmd = destroycmd
         self.targetfile = targetfile
+        self.interactivefile = interactivefile
         self.mountpoints = mountpoints
         self.binds = binds
 
@@ -353,13 +356,17 @@ class ChrootRootManager(RootManager):
         for path in self.copyfiles:
             root.copy_in(path, os.path.dirname(path))
 
-    def _create_metadata_files(self, root):
+    def _create_metadata_files(self, root, interactive):
         from tempfile import NamedTemporaryFile
-        tf = NamedTemporaryFile()
-        tf.write(self.targetname + "\n")
-        tf.flush()
-        root.copy_in(tf.name, self.targetfile)
-        tf.close()
+        files = [(self.targetfile, self.targetname)]
+        if interactive:
+            files.append((self.interactivefile, "yes"))
+        for path, value in files:
+            tf = NamedTemporaryFile()
+            tf.write(value + "\n")
+            tf.flush()
+            root.copy_in(tf.name, path)
+            tf.close()
 
     def _execute_conf_command(self, root):
         if self.postcmd:
@@ -489,7 +496,7 @@ class ChrootRootManager(RootManager):
         packagemanager.create_root(self.suwrapper, repos, path, logger)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, interactive=interactive)
-        self._create_metadata_files(chroot)
+        self._create_metadata_files(chroot, interactive)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
         if interactive:
@@ -505,6 +512,14 @@ class ChrootRootManager(RootManager):
         logger.debug("moving root from %s to %s", root.path, dest)
         self.su().rename(root.path, dest)
         root.path = dest
+
+    def _is_interactive(self, root):
+        checkpath = os.path.abspath(root.path + os.path.sep +
+                self.interactivefile)
+        if os.path.exists(checkpath):
+            logger.debug("found: %s", checkpath)
+            return True
+        return False
 
     def activate_root(self, root):
         if root.state != Active:
@@ -534,6 +549,13 @@ class ChrootRootManager(RootManager):
         state, path = self._existing_root(name, interactive=interactive)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
+        chroot.interactive = self._is_interactive(chroot)
+        if interactive and not chroot.interactive:
+            raise RootError, ("the root %s is not prepared for "
+                    "interactive use" % (name))
+        elif not interactive and chroot.interactive:
+            raise RootError, ("the root %s is prepared for "
+                    "interactive use" % (name))
         return chroot
 
     def list_roots(self):
