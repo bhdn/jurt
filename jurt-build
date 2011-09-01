@@ -90,7 +90,6 @@ class Build(JurtCommand):
         elif self.opts.newid:
             id = self.opts.newid
         # else: fresh = True
-        import pdb; pdb.set_trace()
         self.jurt.build(self.args, self.opts.target, id, fresh,
                 timeout=self.opts.duration, stage=self.opts.stop,
                 outputfile=outputfile, keeproot=self.opts.keeproot)
