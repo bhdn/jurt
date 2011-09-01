@@ -36,17 +36,15 @@ class Put(JurtCommand):
                     "ID (see -l)"))
         parser.add_option("-l", "--latest", default=True,
                 action="store_true",
-                help="Use the latest created root")
+                help="Use the latest created root (default)")
 
     def run(self):
         if not self.args:
             raise CliError, "you must provide some files to be copied"
-        if self.opts.latest and self.opts.id:
-            raise CliError, "-i and -l cannot be used together"
-        if self.opts.latest:
-            id = "latest"
-        else:
+        if self.opts.id:
             id = self.opts.id
+        else:
+            id = "latest"
         self.jurt.put(self.args, targetname=self.opts.target, id=id)
 
 Put().main()
