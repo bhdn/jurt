@@ -136,14 +136,15 @@ class Builder:
         try:
             username, uid = self.build_user_info()
             homedir = self.build_user_home(username)
-            root.add_user(username, uid)
+            if fresh:
+                root.add_user(username, uid)
+                self.packagemanager.setup_repositories(root, self.repos,
+                        logstore, spool)
             self.packagemanager.build_prepare(root, homedir, username, uid)
             insidepath = root.copy_in(path, homedir, self.useruid)
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
             logger.info("installing build-deps")
-            self.packagemanager.setup_repositories(root, self.repos,
-                    logstore, spool)
             self.packagemanager.install_build_deps(insidepath, root, self.repos,
                     logstore, spool)
             logger.info("building")
