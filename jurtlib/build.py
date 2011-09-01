@@ -172,8 +172,8 @@ class Builder:
                         "while unmouting root, things were possibly left "
                         "mounted!\n")
                 raise
-            if not keeproot:
-                root.destroy(self.interactive)
+        if not keeproot:
+            root.destroy(self.interactive)
         localbuilt = []
         localbuilt = [os.path.join(builtdest, os.path.basename(path))
                 for path in builtpaths]
