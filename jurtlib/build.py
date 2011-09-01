@@ -273,7 +273,7 @@ class Builder:
         root.activate()
         try:
             username, uid = self.build_user_info()
-            if id != "latest" or fresh:
+            if fresh:
                 self.packagemanager.setup_repositories(root, self.repos,
                         logstore)
                 root.add_user(username, uid)
