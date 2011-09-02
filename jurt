@@ -24,10 +24,20 @@ import sys
 import os
 
 def usage():
-    print """
-jurt
+    print """\
+jurt - builds packages in a clean root
 
-See jurt-<tab>.
+Before using it, please run jurt-setup.
+
+Basic commands:          (alias)
+
+    jurt-build           (jurt b)
+    jurt-shell           (jurt sh)
+    jurt-list-targets    (jurt lt)
+    jurt-list-roots      (jurt lr)
+    jurt-put
+
+For more information run <COMMAND> --help\
 """
 
 ALIASES = {
