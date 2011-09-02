@@ -71,8 +71,8 @@ class JurtFacade:
     def list_roots(self):
         targets = self.targets.values()
         if targets:
-            for name in targets[0].list_roots():
-                yield name
+            for rootinfo in targets[0].list_roots():
+                yield rootinfo
 
     def put(self, paths, targetname, id):
         target = self._get_target(targetname, id)

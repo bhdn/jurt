@@ -24,6 +24,18 @@ from jurtlib.command import JurtCommand, CliError
 
 DESCR = """\
 Lists roots available to be used on jurt-shell -i <ID>
+
+The output is in the format TYPE LATEST NAME.
+
+TYPE can be:
+
+ b      indicates that it was used for non-interactive build (and thus
+        can only be reused for that purpuse)
+ i      it can be used for interactive build or shell (jurt-build -b or
+        jurt-shell)
+
+LATEST points if the root can be referred with -l on the commands that
+support this option.
 """
 
 class ListRoots(JurtCommand):
@@ -34,7 +46,7 @@ class ListRoots(JurtCommand):
         JurtCommand.init_parser(self, parser)
 
     def run(self):
-        for name in self.jurt.list_roots():
-            print name
+        for name, kind, latest in self.jurt.list_roots():
+            print "%s %s\t%s" % (kind[0], ("", "*")[latest], name)
 
 ListRoots().main()

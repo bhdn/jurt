@@ -109,8 +109,8 @@ class Target:
             root.copy_in(path, homedir, sameuser=True)
 
     def list_roots(self):
-        for name in self.rootmanager.list_roots():
-            yield name
+        for rootinfo in self.rootmanager.list_roots():
+            yield rootinfo
 
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()

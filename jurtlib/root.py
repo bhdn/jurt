@@ -513,8 +513,8 @@ class ChrootRootManager(RootManager):
         self.su().rename(root.path, dest)
         root.path = dest
 
-    def _is_interactive(self, root):
-        checkpath = os.path.abspath(root.path + os.path.sep +
+    def _is_interactive(self, rootpath):
+        checkpath = os.path.abspath(rootpath + os.path.sep +
                 self.interactivefile)
         if os.path.exists(checkpath):
             logger.debug("found: %s", checkpath)
@@ -549,7 +549,7 @@ class ChrootRootManager(RootManager):
         state, path = self._existing_root(name, interactive=interactive)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
-        chroot.interactive = self._is_interactive(chroot)
+        chroot.interactive = self._is_interactive(chroot.path)
         if interactive and not chroot.interactive:
             raise RootError, ("the root %s is not prepared for "
                     "interactive use" % (name))
@@ -559,14 +559,21 @@ class ChrootRootManager(RootManager):
         return chroot
 
     def list_roots(self):
+        _, intlatest = self._resolve_latest_link(interactive=True)
+        _, buildlatest = self._resolve_latest_link(interactive=False)
         for m in (self._active_path, self._old_path):
             path = m("") # duh
             if os.path.exists(path):
                 names = os.listdir(path)
                 for name in names:
+                    rootpath = os.path.abspath(os.path.join(path, name))
                     if (not name.startswith(".") and
-                            os.path.isdir(os.path.join(path, name))):
-                        yield name
+                            os.path.isdir(rootpath)):
+                        interactive = self._is_interactive(rootpath)
+                        latest = (intlatest == rootpath 
+                                or buildlatest == rootpath)
+                        kind = ("build", "interactive")[interactive]
+                        yield name, kind, latest
 
     def guess_target_name(self, name, interactive=False):
         found = None
@@ -589,12 +596,12 @@ class ChrootRootManager(RootManager):
             raise RootError, ("cannot destroy a root that is still "
                     "active: %s" % (root.path))
         self.su().destroy_root(root.path)
-        path = self._latest_path(interactive)
-        if os.path.lexists(path):
-            pointedpath = os.path.abspath(os.readlink(path))
-            if os.path.abspath(root.path) == pointedpath:
-                logger.debug("removing -latest link: %s" % (path))
-                os.unlink(path)
+        _, latestpath = self._resolve_latest_link(interactive)
+        if os.path.abspath(root.path) == latestpath:
+            lpath = self._latest_path(interactive)
+            logger.debug("removing -latest link as the pointed root was "
+                    "destroyed: %s", lpath)
+            os.unlink(lpath)
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
