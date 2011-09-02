@@ -19,6 +19,7 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+import abc
 import sys
 import os
 import shlex
@@ -36,54 +37,69 @@ class PackageManagerError(Error):
 class CommandValidationError(PackageManagerError):
     pass
 
-class PackageManager:
+class PackageManager(object):
+    __metaclass__ = abc.ABCMeta
 
     @classmethod
+    @abc.abstractmethod
     def load_config(class_, pmconf, globalconf):
         return dict()
 
+    @abc.abstractmethod
     def create_root(self, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def install(self, packages, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def install_build_deps(self, sourcepaths, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def extract_source(self, path, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def build_prepare(self, root, homedir, username, uid):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def build_source(self, sourcepath, root, logger, spool):
         raise NotImplementedError
 
     @classmethod
+    @abc.abstractmethod
     def repos_from_config(self, configstr):
         """Parses a configuration line and converts it to a Repository()"""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def validate_cmd_args(self, args):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def cmd_args(self, args):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def allowed_pm_commands(self):
         raise NotImplementedError
 
-class Repos:
+class Repos(object):
+    __metaclass__ = abc.ABCMeta
 
     @classmethod
+    @abc.abstractmethod
     def parse_conf(class_, configline):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def empty(self):
         raise NotImplementedError
 
-class URPMIRepos:
+class URPMIRepos(Repos):
 
     def __init__(self, configline):
         self.medias, self.distribs = self.parse_conf(configline)
