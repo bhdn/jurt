@@ -411,28 +411,35 @@ class ChrootRootManager(RootManager):
         relative = os.path.sep.join(comps[-2:])
         util.replace_link(self._latest_path(interactive), relative)
 
-    def _resolve_latest_link(self, interactive=False):
-        # FIXME FIXME handle broken or unexising link!
+    def _resolve_latest_link(self, interactive=False, fail=True):
         linkpath = self._latest_path(interactive)
-        if not os.path.lexists(linkpath):
-            logger.debug("latest link %s was not found", linkpath)
-            raise ChrootError, ("no information about the latest root "
-                     "was found")
         try:
-            target = os.readlink(linkpath)
-        except EnvironmentError, e:
-            raise ChrootError, "failed to read latest link: %s" % (e)
-        logger.debug("latest link points to %s", target)
-        # expects a link pointing to statename/rootid
-        fields = target.rsplit(os.path.sep, 2)
-        if len(fields) < 2:
-            raise ChrootError, "invalid path name linked by %s" % (linkpath)
-        statename = fields[-2]
-        path = os.path.join(self.topdir, target)
-        if not os.path.exists(path):
-            raise ChrootError, ("it appears the latest root does not "
-                    "exist anymore: %s" % (path))
-        return self._dir_to_state(statename), path
+            if not os.path.lexists(linkpath):
+                logger.debug("latest link %s was not found", linkpath)
+                raise ChrootError, ("no information about the latest root "
+                         "was found")
+            try:
+                target = os.readlink(linkpath)
+            except EnvironmentError, e:
+                raise ChrootError, "failed to read latest link: %s" % (e)
+            kind = ("build", "interactive")[interactive]
+            logger.debug("latest link (%s) points to %s", kind, target)
+            # expects a link pointing to statename/rootid
+            fields = target.rsplit(os.path.sep, 2)
+            if len(fields) < 2:
+                raise ChrootError, "invalid path name linked by %s" % (linkpath)
+            statename = fields[-2]
+            path = os.path.join(self.topdir, target)
+            if not os.path.exists(path):
+                raise ChrootError, ("it appears the latest root does not "
+                        "exist anymore: %s" % (path))
+            return self._dir_to_state(statename), path
+        except ChrootError, e: # goto FTW!!
+            if fail:
+                raise
+            logger.debug("failed to resolve the latest (%s) link: %s",
+                    kind, e)
+            return None, None
 
     def _state_path(self, dir, name):
         return os.path.join(self.topdir, dir, name)
@@ -562,21 +569,27 @@ class ChrootRootManager(RootManager):
         return chroot
 
     def list_roots(self):
-        _, intlatest = self._resolve_latest_link(interactive=True)
-        _, buildlatest = self._resolve_latest_link(interactive=False)
+        _, intlatest = self._resolve_latest_link(interactive=True,
+                fail=False)
+        _, buildlatest = self._resolve_latest_link(interactive=False,
+                fail=False)
         for m in (self._active_path, self._old_path):
             path = m("") # duh
             if os.path.exists(path):
-                names = os.listdir(path)
-                for name in names:
-                    rootpath = os.path.abspath(os.path.join(path, name))
-                    if (not name.startswith(".") and
-                            os.path.isdir(rootpath)):
-                        interactive = self._is_interactive(rootpath)
-                        latest = (intlatest == rootpath 
-                                or buildlatest == rootpath)
-                        kind = ("build", "interactive")[interactive]
-                        yield name, kind, latest
+                try:
+                    names = os.listdir(path)
+                except EnvironmentError, e:
+                    logger.warn("failed to list directory: %s", e)
+                else:
+                    for name in names:
+                        rootpath = os.path.abspath(os.path.join(path, name))
+                        if (not name.startswith(".") and
+                                os.path.isdir(rootpath)):
+                            interactive = self._is_interactive(rootpath)
+                            latest = (intlatest == rootpath
+                                    or buildlatest == rootpath)
+                            kind = ("build", "interactive")[interactive]
+                            yield name, kind, latest
 
     def guess_target_name(self, name, interactive=False):
         found = None
@@ -589,7 +602,7 @@ class ChrootRootManager(RootManager):
                 try:
                     with open(confpath) as f:
                         found = f.readline().strip()
-                except (IOError, OSError), e:
+                except EnvironmentError, e:
                     logger.warn("cannot read target information "
                             "inside chroot on %s: %s" % (confpath, e))
         return found
@@ -599,12 +612,15 @@ class ChrootRootManager(RootManager):
             raise RootError, ("cannot destroy a root that is still "
                     "active: %s" % (root.path))
         self.su().destroy_root(root.path)
-        _, latestpath = self._resolve_latest_link(interactive)
+        _, latestpath = self._resolve_latest_link(interactive, fail=False)
         if os.path.abspath(root.path) == latestpath:
             lpath = self._latest_path(interactive)
             logger.debug("removing -latest link as the pointed root was "
                     "destroyed: %s", lpath)
-            os.unlink(lpath)
+            try:
+                os.unlink(lpath)
+            except EnvironmentError, e:
+                logger.warn("failed to remove the latest link: %s" % (e))
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
@@ -674,8 +690,11 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
     def _run(self, args, stdout=None, stdin=None):
         if stdout is None:
             stdout = subprocess.PIPE
-        proc = subprocess.Popen(args=args, shell=False, stdout=stdout,
-                stdin=stdin, stderr=subprocess.PIPE)
+        try:
+            proc = subprocess.Popen(args=args, shell=False, stdout=stdout,
+                    stdin=stdin, stderr=subprocess.PIPE)
+        except EnvironmentError, e:
+            raise RootError, "failed to run command %s: %s" % (e)
         proc.wait()
         if proc.returncode != 0:
             cmdline = subprocess.list2cmdline(args)
