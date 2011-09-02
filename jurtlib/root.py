@@ -418,7 +418,10 @@ class ChrootRootManager(RootManager):
             logger.debug("latest link %s was not found", linkpath)
             raise ChrootError, ("no information about the latest root "
                      "was found")
-        target = os.readlink(linkpath)
+        try:
+            target = os.readlink(linkpath)
+        except EnvironmentError, e:
+            raise ChrootError, "failed to read latest link: %s" % (e)
         logger.debug("latest link points to %s", target)
         # expects a link pointing to statename/rootid
         fields = target.rsplit(os.path.sep, 2)
