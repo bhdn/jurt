@@ -19,6 +19,7 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+import abc
 import os
 import shlex
 import subprocess
@@ -60,80 +61,101 @@ class Root(object):
     - keep: roots that were pinned and can be reused soon
     - old: can be removed at any time, can go to active state at any time
     """
+    __metaclass__ = abc.ABCMeta
 
+    @abc.abstractmethod
     def copy_in(self, files, dstpath):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def copy_out(self, sourcepaths, dstpath):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def mkdir(self, path_or_paths, uid=None, gid=None, mode=None):
         raise NotImplementedError
 
-    def execute(self, command):
-        raise NotImplementedError
-
+    @abc.abstractmethod
     def add_user(self, username, uid):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def make_spool_reachable(self, spool):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def glob(self, globexpr):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def external_path(self, localpath):
         """Should provide an pointer from the outside world to know how to
         find files inside the root, mostly for error messages"""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def activate(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def deactivate(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def destroy(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def interactive_prepare(self, username, uid, packagemanager, repos,
             logstore):
         raise NotImplementedError
 
-    def allows_interactive_shell(self):
-        raise NotImplementedError
-
 class RootManager(object):
 
+    __metaclass__ = abc.ABCMeta
+
     @classmethod
+    @abc.abstractmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def create_new(self, name, packagemanager, repos, logger, interactive):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def su(self):
         """Returns an object that allows runnning privilleged commands from
         inside the root"""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def check_valid_subdir(self, path):
         """Checks whether the path is inside the roots directory"""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def destroy(self, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def test_sudo(self):
         raise NotImplementedError
 
-    def get_root_by_id(self, id):
+    @abc.abstractmethod
+    def get_root_by_name(self, name, packagemanager, interactive=False):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def activate_root(self, root):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def list_roots(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def allows_interactive_shell(self):
         raise NotImplementedError
 
 class ChrootSpool:
