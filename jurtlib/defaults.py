@@ -39,6 +39,8 @@ system-file = /etc/jurt/jurt.conf
 arch = host
 arch-map = i586 /usr/bin/setarch i586
 
+repos = use-repositories-from-system
+
 root-type = chroot-with-cache
 base-packages = basesystem-minimal rpm-build rpm-mandriva-setup urpmi rsync
                 bzip2
@@ -90,6 +92,8 @@ urpmi-command = /usr/bin/env -i /usr/sbin/urpmi
 urpmiaddmedia-command = /usr/sbin/urpmi.addmedia --no-md5sum
 urpmi-extra-options = --no-suggests --excludedocs
 urpmi-update-command = /usr/sbin/urpmi.update -a
+urpmi-list-medias-command = /usr/bin/env -i /usr/bin/urpmq --dump-config
+urpmi-ignore-system-medias = (testing|backports|debug|SRPMS|file://|cdrom://)
 urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       use-distrib= urpmi-root= distrib= buildrequires
                       searchmedia= sortmedia= update synthesis= auto-update
@@ -101,7 +105,7 @@ urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       wget-options= limit-rate= resume retry= proxy-user=
                       verify-rpm no-verify-rpm excludepath= ignorearch
                       ignoresize repackage noscripts nolock P y q
-                      tune-rpm= nofdigest
+                      tune-rpm= nofdigest raw
 urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
 interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi

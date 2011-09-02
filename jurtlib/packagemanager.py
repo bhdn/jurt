@@ -69,7 +69,6 @@ class PackageManager(object):
     def build_source(self, sourcepath, root, logger, spool):
         raise NotImplementedError
 
-    @classmethod
     @abc.abstractmethod
     def repos_from_config(self, configstr):
         """Parses a configuration line and converts it to a Repository()"""
@@ -90,6 +89,12 @@ class PackageManager(object):
 class Repos(object):
     __metaclass__ = abc.ABCMeta
 
+    use_from_system_line = "use-repositories-from-system"
+
+    @abc.abstractmethod
+    def __init__(self, configline):
+        raise NotImplementedError
+
     @classmethod
     @abc.abstractmethod
     def parse_conf(class_, configline):
@@ -101,8 +106,13 @@ class Repos(object):
 
 class URPMIRepos(Repos):
 
-    def __init__(self, configline):
-        self.medias, self.distribs = self.parse_conf(configline)
+    def __init__(self, configline, listmediascmd, ignoremediasexpr):
+        self.listmediascmd = listmediascmd
+        self.ignoremediasexpr = ignoremediasexpr
+        if configline.strip() == self.use_from_system_line:
+            self._medias = self._distribs = None
+        else:
+            self._medias, self._distribs = self.parse_conf(configline)
 
     @classmethod
     def parse_conf(class_, configline):
@@ -123,8 +133,49 @@ class URPMIRepos(Repos):
                 medias.append(fields)
         return medias, distribs
 
+    def _medias_from_system(self):
+        try:
+            logger.debug("running %s", self.listmediascmd)
+            output, _ = cmd.run(self.listmediascmd)
+        except CommandError, e:
+            raise PackageManagerError, ("failed to discover repository "
+                    "information from the system: %s" % (e))
+        found = []
+        for line in output.splitlines():
+            if self.ignoremediasexpr.search(line):
+                logger.debug("ignoring media line based on "
+                        "configuration: %r", line)
+                continue
+            mediainfo = shlex.split(line)
+            logger.debug("system media: %r", mediainfo)
+            found.append(mediainfo)
+        return found
+
+    def medias(self):
+        # as we can't easily figure 'distribs' used in our system, we are
+        # going to assume only medias can be fetched
+        if self._medias is None and self._distribs is None:
+            logger.debug("no medias defined, going to fetch medias "
+                    "from system")
+            self._medias = self._medias_from_system()
+            self._distribs = []
+        return self._medias[:]
+
+    def distribs(self):
+        if self._distribs is None:
+            self.medias()
+        return self._distribs[:]
+
     def empty(self):
-        return not self.medias and not self.distribs
+        return not self._medias and not self._distribs
+
+def compile_conf_re(value, field):
+    try:
+        comp = re.compile(value)
+    except re.error, e:
+        raise PackageManagerError, ("invalid regexp in "
+            "configuration option %s: %r: %s" % (field, value, e))
+    return comp
 
 class URPMIPackageManager(PackageManager):
 
@@ -148,7 +199,11 @@ class URPMIPackageManager(PackageManager):
         rpmmacros = pmconf.rpm_macros_file.strip()
         defpackager = pmconf.rpm_packager_default.strip()
         packager = pmconf.rpm_packager.strip()
-        urpmifatalexpr = re.compile(pmconf.urpmi_fatal_output)
+        urpmifatalexpr = compile_conf_re(pmconf.urpmi_fatal_output,
+                                         "urpmi-fata-output")
+        ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
+                                         "urpmi-ignore-system-medias")
+        listmediascmd = shlex.split(pmconf.urpmi_list_medias_command)
         if packager == "undefined":
             packager = None
         return dict(basepkgs=basepkgs,
@@ -170,13 +225,15 @@ class URPMIPackageManager(PackageManager):
                 rpmtopdir=rpmtopdir,
                 rpmsubdirs=rpmsubdirs,
                 rpmmacros=rpmmacros,
-                urpmifatalexpr=urpmifatalexpr)
+                urpmifatalexpr=urpmifatalexpr,
+                ignoremediasexpr=ignoremediasexpr,
+                listmediascmd=listmediascmd)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
             allowedpmcmds, defpackager, packager, rpmtopdir, rpmsubdirs,
-            rpmmacros, urpmifatalexpr):
+            rpmmacros, urpmifatalexpr, ignoremediasexpr, listmediascmd):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
@@ -197,18 +254,20 @@ class URPMIPackageManager(PackageManager):
         self.rpmsubdirs = rpmsubdirs
         self.rpmmacros = rpmmacros
         self.urpmifatalexpr = urpmifatalexpr
+        self.ignoremediasexpr = ignoremediasexpr
+        self.listmediascmd = listmediascmd
 
-    @classmethod
     def repos_from_config(self, configstr):
-        return URPMIRepos(configstr)
+        return URPMIRepos(configstr, self.listmediascmd,
+                self.ignoremediasexpr)
 
     def create_root(self, suwrapper, repos, path, logger):
         mediacmds = []
-        for distrib in repos.distribs:
+        for distrib in repos.distribs():
             argsmedia = ["--urpmi-root", path]
             argsmedia.extend(("--distrib", distrib))
             mediacmds.append(argsmedia)
-        for media in repos.medias:
+        for media in repos.medias():
             argsmedia = ["--urpmi-root", path]
             argsmedia.extend(media)
             mediacmds.append(argsmedia)

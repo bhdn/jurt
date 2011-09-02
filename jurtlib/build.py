@@ -54,9 +54,6 @@ class Builder:
     def load_config(class_, rootmanager, packagemanager, buildconf,
             globalconf):
         repos = packagemanager.repos_from_config(buildconf.repos)
-        if repos.empty():
-            logger.warn("no valid repository entries found for target "
-                    "%s" % (buildconf.target_name))
         interactive = parse_bool(buildconf.interactive)
         deliverydir = os.path.expanduser(buildconf.delivery_dir)
         logcompresscmd = shlex.split(buildconf.log_compress_command)
