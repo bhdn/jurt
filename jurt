@@ -30,12 +30,19 @@ jurt
 See jurt-<tab>.
 """
 
+ALIASES = {
+    "b": "build",
+    "sh": "shell",
+    "lr": "list-roots",
+    "lt": "list-targets" }
+
 def main():
     if len(sys.argv) < 2:
         usage()
     else:
         dir = os.path.dirname(__file__)
-        name = "jurt-" + sys.argv[1]
+        cmd = ALIASES.get(sys.argv[1], sys.argv[1])
+        name = "jurt-" + cmd
         prog = os.path.join(dir, name)
         if os.path.exists(prog):
             args = [name] + sys.argv[2:]
