@@ -326,7 +326,6 @@ class RootCommand(JurtCommand):
     @_requires_target
     @_requires_root
     def cmd_mountall(self):
-        # FIXME allow configuring filesystems to be mounted
         mounted = self._parse_proc_mounts()
         for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
             absmntpoint = os.path.abspath(self.opts.root + "/" +
