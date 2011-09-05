@@ -434,6 +434,7 @@ class ChrootRootManager(RootManager):
         util.replace_link(self._latest_path(interactive), relative)
 
     def _resolve_latest_link(self, interactive=False, fail=True):
+        kind = ("build", "interactive")[interactive]
         linkpath = self._latest_path(interactive)
         try:
             if not os.path.lexists(linkpath):
@@ -444,7 +445,6 @@ class ChrootRootManager(RootManager):
                 target = os.readlink(linkpath)
             except EnvironmentError, e:
                 raise ChrootError, "failed to read latest link: %s" % (e)
-            kind = ("build", "interactive")[interactive]
             logger.debug("latest link (%s) points to %s", kind, target)
             # expects a link pointing to statename/rootid
             fields = target.rsplit(os.path.sep, 2)
