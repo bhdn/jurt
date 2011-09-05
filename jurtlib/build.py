@@ -142,7 +142,7 @@ class Builder:
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
             logger.info("installing build-deps")
-            self.packagemanager.install_build_deps(insidepath, root, self.repos,
+            self.packagemanager.install_build_deps(srcpath, root, self.repos,
                     logstore, spool)
             logger.info("building")
             (package, success, builtpaths) = \
