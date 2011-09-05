@@ -141,7 +141,7 @@ class Builder:
             insidepath = root.copy_in(path, homedir, self.useruid)
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
-            logger.info("installing build-deps")
+            logger.info("installing build dependencies")
             self.packagemanager.install_build_deps(srcpath, root, self.repos,
                     logstore, spool)
             logger.info("building")
