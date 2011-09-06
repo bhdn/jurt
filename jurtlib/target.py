@@ -116,18 +116,19 @@ class Target:
         self.permchecker.check_filesystem_permissions()
         self.rootmanager.test_sudo(interactive)
 
-def load_targets(globalconf):
-    targets = {} # { name: Target(), ...}
-    for name, targetconf in globalconf.targets():
-        loggerfactory = logstore.get_logger_factory(targetconf, globalconf)
-        suwrapper = su.get_su_wrapper(name, targetconf, globalconf)
-        packagemanager = pm.get_package_manager(targetconf, globalconf)
-        rootmanager = root.get_root_manager(suwrapper, targetconf,
-                globalconf)
-        builder = build.get_builder(rootmanager, packagemanager,
-                targetconf, globalconf)
-        permchecker = PermissionChecker(targetconf, globalconf)
-        target = Target(name, rootmanager, packagemanager, builder,
-                loggerfactory, permchecker)
-        targets[target.name] = target
-    return targets
+def load_target(name, globalconf, targetconf):
+    loggerfactory = logstore.get_logger_factory(targetconf, globalconf)
+    suwrapper = su.get_su_wrapper(name, targetconf, globalconf)
+    packagemanager = pm.get_package_manager(targetconf, globalconf)
+    rootmanager = root.get_root_manager(suwrapper, targetconf,
+            globalconf)
+    builder = build.get_builder(rootmanager, packagemanager,
+            targetconf, globalconf)
+    permchecker = PermissionChecker(targetconf, globalconf)
+    target = Target(name, rootmanager, packagemanager, builder,
+            loggerfactory, permchecker)
+    return target
+
+def get_targets_conf(globalconf):
+    conf = dict(globalconf.targets())
+    return conf

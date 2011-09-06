@@ -28,14 +28,29 @@ class JurtFacade:
 
     def __init__(self, config):
         self.config = config
-        self.targets = targetmod.load_targets(config)
+        self.targets = {}
+        self.targetsconf = targetmod.get_targets_conf(config)
 
-    def _get_target(self, name=None, id=None, interactive=False):
-        if not self.targets:
+    def init_target(self, name):
+        self.targetsconf[name] # to raise keyerror
+        try:
+            target = self.targets[name]
+        except KeyError:
+            target = targetmod.load_target(name, self.config, self.targetsconf[name])
+            self.targets[name] = target
+        return target
+
+    def _init_targets(self):
+        for name in self.targetsconf:
+            self.init_target(name)
+
+    def get_target(self, name=None, id=None, interactive=False):
+        if not self.targetsconf:
             raise SetupError, ("no build targets found, see %s" %
                     (self.config.conf.system_file))
         if name is None:
             if id:
+                self._init_targets()
                 for target in self.targets.itervalues():
                     name = target.rootmanager.guess_target_name(id,
                             interactive)
@@ -44,10 +59,12 @@ class JurtFacade:
             if name is None:
                 name = self.config.jurt.default_target
                 if name == targetmod.UNSET_DEFAULT_TARGET:
+                    if len(self.targetsconf) == 1:
+                        name = self.targetsconf.keys()[0]
                     raise Error, "no target name provided and "\
                             "no default target set in configuration"
         try:
-            target = self.targets[name]
+            target = self.init_target(name)
         except KeyError:
             #FIXME use BuildError
             raise Error, "no such target: %s" % (name)
@@ -57,28 +74,30 @@ class JurtFacade:
     def build(self, paths, targetname=None, id=None, fresh=False,
             stage=None, timeout=None, outputfile=None, keeproot=False):
         """Builds a set of packages"""
-        target = self._get_target(targetname, id, interactive=bool(stage))
+        target = self.get_target(targetname, id, interactive=bool(stage))
         target.build(paths, id, fresh, stage, timeout, outputfile,
                 keeproot)
 
     def target_names(self):
-        return self.targets.keys()
+        return self.targetsconf.keys()
 
     def shell(self, targetname=None, id=None, fresh=False):
-        target = self._get_target(targetname, id, interactive=True)
+        target = self.get_target(targetname, id, interactive=True)
         target.shell(id=id, fresh=fresh)
 
     def list_roots(self):
+        self._init_targets()
         targets = self.targets.values()
         if targets:
             for rootinfo in targets[0].list_roots():
                 yield rootinfo
 
     def put(self, paths, targetname, id):
-        target = self._get_target(targetname, id)
+        target = self.get_target(targetname, id)
         target.put(paths, id)
 
     def check_permissions(self, interactive=True):
+        self._init_targets()
         if not self.targets:
             raise Error, "no targets setup, you must have at least "\
                     "one setup in configuration for testing"

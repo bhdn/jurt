@@ -131,7 +131,7 @@ class RootCommand(JurtCommand):
             if self.opts.target is None:
                 raise CliError, "--target is mandatory for this --type"
             try:
-                target = self.jurt.targets[self.opts.target]
+                target = self.jurt.init_target(self.opts.target)
             except KeyError:
                 raise CliError, "invalid target: %s" % (self.opts.target)
             self.target = target
