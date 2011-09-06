@@ -57,7 +57,10 @@ class JurtCommand(object):
             lastv = kv[1]
             for name in levels[:0:-1]:
                 lastv = {name: lastv}
-            parser.values.config_options[levels[0]] = lastv
+            if levels[0] in parser.values.config_options:
+                parser.values.config_options[levels[0]].update(lastv)
+            else:
+                parser.values.config_options[levels[0]] = lastv
         parser.set_usage(self.usage)
         parser.set_description(self.descr)
         parser.set_defaults(config_options={})
