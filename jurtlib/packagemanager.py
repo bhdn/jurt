@@ -177,6 +177,18 @@ def compile_conf_re(value, field):
             "configuration option %s: %r: %s" % (field, value, e))
     return comp
 
+def split_extra_macros(value, field):
+    found = []
+    for rawpair in value.split("|"):
+        fields = rawpair.split(None, 1)
+        if not fields:
+            continue
+        if len(fields) != 2:
+            raise PackageManagerError, ("the field %s expects "
+                    "a macro name and a value: %r" % (field, rawpair))
+        found.append(fields)
+    return found
+
 class URPMIPackageManager(PackageManager):
 
     @classmethod
@@ -204,6 +216,8 @@ class URPMIPackageManager(PackageManager):
         ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
                                          "urpmi-ignore-system-medias")
         listmediascmd = shlex.split(pmconf.urpmi_list_medias_command)
+        extramacros = split_extra_macros(pmconf.rpm_build_macros,
+                "rpm-build-macros")
         if packager == "undefined":
             packager = None
         return dict(basepkgs=basepkgs,
@@ -227,13 +241,15 @@ class URPMIPackageManager(PackageManager):
                 rpmmacros=rpmmacros,
                 urpmifatalexpr=urpmifatalexpr,
                 ignoremediasexpr=ignoremediasexpr,
-                listmediascmd=listmediascmd)
+                listmediascmd=listmediascmd,
+                extramacros=extramacros)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
             allowedpmcmds, defpackager, packager, rpmtopdir, rpmsubdirs,
-            rpmmacros, urpmifatalexpr, ignoremediasexpr, listmediascmd):
+            rpmmacros, urpmifatalexpr, ignoremediasexpr, listmediascmd,
+            extramacros):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.urpmiopts = urpmiopts
@@ -256,6 +272,7 @@ class URPMIPackageManager(PackageManager):
         self.urpmifatalexpr = urpmifatalexpr
         self.ignoremediasexpr = ignoremediasexpr
         self.listmediascmd = listmediascmd
+        self.extramacros = extramacros
 
     def repos_from_config(self, configstr):
         return URPMIRepos(configstr, self.listmediascmd,
@@ -370,6 +387,11 @@ class URPMIPackageManager(PackageManager):
     def _topdir_args(self, homedir):
         return ("--define", "_topdir %s" % (self._topdir(homedir)))
 
+    def _extra_macros(self):
+        for name, value in self.extramacros:
+            yield "--define"
+            yield "%s %s" % (name, value)
+
     def extract_source(self, path, root, username, homedir, logstore):
         args = self.rpmunpackcmd[:]
         args.extend(self._topdir_args(homedir))
@@ -436,6 +458,7 @@ class URPMIPackageManager(PackageManager):
             spool, stage=None, timeout=None):
         args = self.rpmbuildcmd[:]
         args.extend(self._topdir_args(homedir))
+        args.extend(self._extra_macros())
         if stage:
             self.check_build_stage(stage)
             args.append("-b" + stage)

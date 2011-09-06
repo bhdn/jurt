@@ -116,6 +116,7 @@ urpmi-fatal-output = (No space left on device|A requested package cannot be inst
 rpm-command = /bin/rpm
 rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
+rpm-build-macros =
 rpm-collect-glob = RPMS/*/*.rpm SRPMS/*.src.rpm
 rpm-get-arch-command = %(rpm-command)s --eval '%%{mandriva_arch}'
 rpm-get-packager-command = %(rpm-command)s
