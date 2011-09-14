@@ -194,6 +194,7 @@ class URPMIPackageManager(PackageManager):
     @classmethod
     def load_config(class_, pmconf, globalconf):
         basepkgs = pmconf.base_packages.split()
+        interactivepkgs = pmconf.interactive_packages.split()
         urpmiopts = shlex.split(pmconf.urpmi_extra_options)
         urpmivalidopts = pmconf.urpmi_valid_options.split()
         addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
@@ -221,6 +222,7 @@ class URPMIPackageManager(PackageManager):
         if packager == "undefined":
             packager = None
         return dict(basepkgs=basepkgs,
+                interactivepkgs=interactivepkgs,
                 rootsdir=pmconf.roots_path,
                 urpmiopts=urpmiopts,
                 urpmivalidopts=urpmivalidopts,
@@ -246,12 +248,13 @@ class URPMIPackageManager(PackageManager):
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
-            rpmpackagercmd, basepkgs, urpmiopts, urpmivalidopts,
-            allowedpmcmds, defpackager, packager, rpmtopdir, rpmsubdirs,
-            rpmmacros, urpmifatalexpr, ignoremediasexpr, listmediascmd,
-            extramacros):
+            rpmpackagercmd, basepkgs, interactivepkgs, urpmiopts,
+            urpmivalidopts, allowedpmcmds, defpackager, packager,
+            rpmtopdir, rpmsubdirs, rpmmacros, urpmifatalexpr,
+            ignoremediasexpr, listmediascmd, extramacros):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
+        self.interactivepkgs = interactivepkgs
         self.urpmiopts = urpmiopts
         self.urpmivalidopts = urpmivalidopts
         self.urpmicmd = urpmicmd
@@ -278,7 +281,7 @@ class URPMIPackageManager(PackageManager):
         return URPMIRepos(configstr, self.listmediascmd,
                 self.ignoremediasexpr)
 
-    def create_root(self, suwrapper, repos, path, logger):
+    def create_root(self, suwrapper, repos, path, logger, interactive):
         mediacmds = []
         for distrib in repos.distribs():
             argsmedia = ["--urpmi-root", path]
@@ -288,19 +291,26 @@ class URPMIPackageManager(PackageManager):
             argsmedia = ["--urpmi-root", path]
             argsmedia.extend(media)
             mediacmds.append(argsmedia)
-        instargs = self.urpmiopts[:]
-        instargs.append("--auto")
-        instargs.extend(("--root", path))
-        instargs.extend(("--urpmi-root", path))
-        instargs.extend(self.basepkgs)
+        baseargs = self.urpmiopts[:]
+        baseargs.append("--auto")
+        baseargs.extend(("--root", path))
+        baseargs.extend(("--urpmi-root", path))
+        interactiveargs = baseargs[:]
+        baseargs.extend(self.basepkgs)
+        interactiveargs.extend(self.interactivepkgs)
         try:
             outputlogger = logger.get_output_handler("chroot-install")
             try:
                 for args in mediacmds:
                     suwrapper.run_package_manager("urpmi.addmedia", args,
                             outputlogger=outputlogger)
-                suwrapper.run_package_manager("urpmi", instargs,
+                suwrapper.run_package_manager("urpmi", baseargs,
                         outputlogger=outputlogger)
+                if interactive and self.interactivepkgs:
+                    outputlogger.write(">>>> installing interactive "
+                            "packages")
+                    suwrapper.run_package_manager("urpmi", interactiveargs,
+                            outputlogger=outputlogger)
             finally:
                 outputlogger.close()
         except su.CommandError, e:

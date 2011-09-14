@@ -306,7 +306,6 @@ class ChrootRootManager(RootManager):
         arch = rootconf.arch
         archmap = class_._parse_arch_map(rootconf.arch_map)
         allowshell = parse_bool(rootconf.allow_interactive_shell)
-        interactivepkgs = rootconf.interactive_packages.split()
         keepstatedir = rootconf.keep_roots_dir
         oldstatedir = rootconf.old_roots_dir
         tempstatedir = rootconf.temp_roots_dir
@@ -328,7 +327,6 @@ class ChrootRootManager(RootManager):
             arch=arch,
             archmap=archmap,
             allowshell=allowshell,
-            interactivepkgs=interactivepkgs,
             activestatedir=activestatedir,
             tempstatedir=tempstatedir,
             oldstatedir=oldstatedir,
@@ -343,10 +341,10 @@ class ChrootRootManager(RootManager):
             binds=binds)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
-            copyfiles, postcmd, allowshell, interactivepkgs,
-            activestatedir, tempstatedir, oldstatedir, keepstatedir,
-            latestsuffix_build, latestsuffix_interactive, putcopycmd,
-            destroycmd, targetfile, interactivefile, mountpoints, binds):
+            copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
+            oldstatedir, keepstatedir, latestsuffix_build,
+            latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
+            interactivefile, mountpoints, binds):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -357,7 +355,6 @@ class ChrootRootManager(RootManager):
         self.arch = arch
         self.archmap = archmap
         self.allowshell = allowshell
-        self.interactivepkgs = interactivepkgs
         self.activestatedir = activestatedir
         self.keepstatedir = keepstatedir
         self.oldstatedir = oldstatedir
@@ -525,15 +522,13 @@ class ChrootRootManager(RootManager):
         self._check_new_root_name(name, forcenew)
         path = self._temp_path(name)
         self.su().mkdir(path)
-        packagemanager.create_root(self.suwrapper, repos, path, logger)
+        packagemanager.create_root(self.suwrapper, repos, path, logger,
+                interactive)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, interactive=interactive)
         self._create_metadata_files(chroot, interactive)
         self._copy_files_from_conf(chroot)
         self._execute_conf_command(chroot)
-        if interactive:
-            packagemanager.install(self.interactivepkgs, chroot, repos,
-                    logger, "interactive-install")
         return chroot
 
     def _move_root(self, root, dest):
