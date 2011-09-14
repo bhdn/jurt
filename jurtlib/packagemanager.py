@@ -213,7 +213,7 @@ class URPMIPackageManager(PackageManager):
         defpackager = pmconf.rpm_packager_default.strip()
         packager = pmconf.rpm_packager.strip()
         urpmifatalexpr = compile_conf_re(pmconf.urpmi_fatal_output,
-                                         "urpmi-fata-output")
+                                         "urpmi-fatal-output")
         ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
                                          "urpmi-ignore-system-medias")
         listmediascmd = shlex.split(pmconf.urpmi_list_medias_command)
