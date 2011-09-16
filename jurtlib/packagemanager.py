@@ -308,7 +308,7 @@ class URPMIPackageManager(PackageManager):
                         outputlogger=outputlogger)
                 if interactive and self.interactivepkgs:
                     outputlogger.write(">>>> installing interactive "
-                            "packages")
+                            "packages\n")
                     suwrapper.run_package_manager("urpmi", interactiveargs,
                             outputlogger=outputlogger)
             finally:
