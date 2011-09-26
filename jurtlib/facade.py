@@ -55,6 +55,8 @@ class JurtFacade:
                     name = target.rootmanager.guess_target_name(id,
                             interactive)
                     if name:
+                        if name == targetname:
+                            return target
                         break
             if name is None:
                 name = self.config.jurt.default_target
