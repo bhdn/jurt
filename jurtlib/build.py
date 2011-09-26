@@ -144,6 +144,7 @@ class Builder:
             logger.info("installing build dependencies")
             self.packagemanager.install_build_deps(srcpath, root, self.repos,
                     logstore, spool)
+            self.packagemanager.describe_root(root, username, logstore)
             logger.info("building")
             (package, success, builtpaths) = \
                     self.packagemanager.build_source(srcpath, root, logstore,

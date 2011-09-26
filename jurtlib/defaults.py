@@ -114,6 +114,8 @@ interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi
 urpmi-fatal-output = (No space left on device|A requested package cannot be installed)
 
 rpm-command = /bin/rpm
+rpm-list-packages-command = %(rpm-command)s -qa --qf
+    'n=%%{name} e=%%{epoch} v=%%{version} r=%%{release} de=%%{distepoch} dt=%%{disttag}\\n'
 rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
 rpm-build-macros =

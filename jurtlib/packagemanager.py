@@ -58,6 +58,10 @@ class PackageManager(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def describe_root(self, root, username, logstore):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def extract_source(self, path, root):
         raise NotImplementedError
 
@@ -212,6 +216,7 @@ class URPMIPackageManager(PackageManager):
         rpmmacros = pmconf.rpm_macros_file.strip()
         defpackager = pmconf.rpm_packager_default.strip()
         packager = pmconf.rpm_packager.strip()
+        rpmlistpkgs = shlex.split(pmconf.rpm_list_packages_command)
         urpmifatalexpr = compile_conf_re(pmconf.urpmi_fatal_output,
                                          "urpmi-fatal-output")
         ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
@@ -241,6 +246,7 @@ class URPMIPackageManager(PackageManager):
                 rpmtopdir=rpmtopdir,
                 rpmsubdirs=rpmsubdirs,
                 rpmmacros=rpmmacros,
+                rpmlistpkgs=rpmlistpkgs,
                 urpmifatalexpr=urpmifatalexpr,
                 ignoremediasexpr=ignoremediasexpr,
                 listmediascmd=listmediascmd,
@@ -250,7 +256,7 @@ class URPMIPackageManager(PackageManager):
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, interactivepkgs, urpmiopts,
             urpmivalidopts, allowedpmcmds, defpackager, packager,
-            rpmtopdir, rpmsubdirs, rpmmacros, urpmifatalexpr,
+            rpmtopdir, rpmsubdirs, rpmmacros, rpmlistpkgs, urpmifatalexpr,
             ignoremediasexpr, listmediascmd, extramacros):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
@@ -272,6 +278,7 @@ class URPMIPackageManager(PackageManager):
         self.rpmtopdir = rpmtopdir
         self.rpmsubdirs = rpmsubdirs
         self.rpmmacros = rpmmacros
+        self.rpmlistpkgs = rpmlistpkgs
         self.urpmifatalexpr = urpmifatalexpr
         self.ignoremediasexpr = ignoremediasexpr
         self.listmediascmd = listmediascmd
@@ -359,6 +366,15 @@ class URPMIPackageManager(PackageManager):
                 rootspool.destroy()
         except su.CommandError, e:
             raise PackageManagerError, errmsg
+
+    def describe_root(self, root, username, logstore):
+        args = self.rpmlistpkgs[:]
+        outputlogger = logstore.get_output_handler("packages-list")
+        try:
+            root.su().run_as(args, user=username,
+                    outputlogger=outputlogger)
+        finally:
+            outputlogger.close()
 
     def install(self, packages, root, repos, logstore, logname=None):
         args = self.urpmiopts[:]
