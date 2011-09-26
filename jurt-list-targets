@@ -27,7 +27,10 @@ class ListTargets(JurtCommand):
     descr = "List all build targets"
 
     def run(self):
-        for target in self.jurt.target_names():
-            print target
+        for target, default in self.jurt.target_names():
+            if default:
+                print target, "(default)"
+            else:
+                print target
 
 ListTargets().main()

@@ -81,7 +81,10 @@ class JurtFacade:
                 keeproot)
 
     def target_names(self):
-        return self.targetsconf.keys()
+        defname = self.config.jurt.default_target
+        for name in self.targetsconf.iterkeys():
+            yield name, (name == defname)
+
 
     def shell(self, targetname=None, id=None, fresh=False):
         target = self.get_target(targetname, id, interactive=True)
