@@ -93,7 +93,7 @@ class JurtFacade:
                 yield rootinfo
 
     def put(self, paths, targetname, id):
-        target = self.get_target(targetname, id)
+        target = self.get_target(targetname, id, interactive=True)
         target.put(paths, id)
 
     def check_permissions(self, interactive=True):
