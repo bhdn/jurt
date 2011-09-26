@@ -50,8 +50,8 @@ class JurtFacade:
                     (self.config.conf.system_file))
         if name is None:
             if id:
-                self._init_targets()
-                for target in self.targets.itervalues():
+                for targetname in self.targetsconf:
+                    target = self.init_target(targetname)
                     name = target.rootmanager.guess_target_name(id,
                             interactive)
                     if name:
