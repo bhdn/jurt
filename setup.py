@@ -23,7 +23,7 @@
 from distutils.core import setup
 
 setup(name="jurt",
-        version = "0.01",
+        version = "0.02",
         description = "Jurt builds packages like iurt",
         url = "http://wiki.mandriva.com/",
         author = "Bogdano Arendartchuk",
