@@ -63,8 +63,9 @@ class JurtFacade:
                 if name == targetmod.UNSET_DEFAULT_TARGET:
                     if len(self.targetsconf) == 1:
                         name = self.targetsconf.keys()[0]
-                    raise Error, "no target name provided and "\
-                            "no default target set in configuration"
+                    else:
+                        raise Error, "no target name provided and "\
+                                "no default target set in configuration"
         try:
             target = self.init_target(name)
         except KeyError:
