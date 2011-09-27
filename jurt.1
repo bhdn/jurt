@@ -1,0 +1,56 @@
+.\" jurt - Builds packages in a clean root
+.TH "jurt" "1" "2011 Sep 26" "Bogdano Arendartchuk" ""
+.SH "NAME"
+jurt \- Builds packages in a clean root
+.SH "SYNOPSIS"
+\fBjurt\fP command [options] [arguments]
+
+Detailed help on commands is available running \fBjurt <command> \-\-help\fP.
+.SH "BASIC USAGE"
+.SS "Setup"
+
+Run \fBjurt-setup -u someusername\fP as root. This command will add an entry in \fB/etc/sudoers\fP and will add the user \fBsomeusername\fP to the group \fBjurt\fP. After that, be sure that you are a member of this group before running any other command.
+
+Edit \fB/etc/jurt/jurt.conf\fP and define the "targets" that will be used to build packages. The default configuration file provides a description on how to define them.
+
+.SS "Examples"
+.PP
+.IP "\fBjurt build -t cooker-i586 null-2.1-64.src.rpm\fP"
+Will buld a src.rpm for the target \fBcooker-i586\fP and place the resulting log files and binaries inside the directory at \fB~/jurt/\fP.
+.IP "\fBjurt build null-2.1-64.src.rpm\fP"
+Builds the src.rpm using the default target.
+.IP "\fBjurt build openssl-1.0.0e-1.src.rpm mutt-1.5.21-4.src.rpm\fP"
+Will build the openssl package first, add the resulting binaries to a temporary repository and then build mutt in another root using the packages from openssl as build dependencies.
+.IP "\fBjurt list-targets\fP"
+List the build targets available. Point which one is the default for when \fB-t TARGET\fP is omitted in commands.
+.IP "\fBjurt shell\fP"
+Creates a root and drops into a shell inside this root.
+.IP "\fBjurt shell -l\fP"
+Will open a shell inside the most recently used root.
+.IP "\fBjurt shell -n foo\fP"
+Will open a shell for a root named \fBfoo\fP.
+.IP "\fBjurt shell -i foo\fP"
+Will open a shell in the existing root named \fBfoo\fP.
+.IP "\fBjurt list-roots\fP"
+Will open a shell inside the most recently used root. It also points which is the root that can be referred to using the \fB-l\fP option in commands.
+.IP "\fBjurt put -l somedir/ null-2.1-64.src.rpm\fP"
+Will copy the directory \fBsomedir\fP and the src.rpm to the most recently used root.
+.IP "\fBjurt showrc\fP"
+Shows all configuration options, including default values, used by jurt. Any value inside the section \fB[any target]\fP can be redefined inside target sections in configuration.
+.SH "ENVIRONMENT VARIABLES"
+.PP
+.IP "\fBJURT_CONF\fP"
+Sets the configuration file to be read by \fBjurt\fP
+.SH "FILES"
+.nf 
+/etc/jurt/jurt.conf
+/var/spool/jurt/
+/usr/share/doc/jurt/
+.fi 
+.SH "BUGS"
+This man page is not finished yet.
+Also, do not try to invoke many times the same root via \fBjurt-shell -l\fP, as currently there is no locking mechanism implemented.
+.SH "SEE ALSO"
+mock(1), iurt(?), hasher(7)
+.SH "AUTHOR"
+\fBjurt\fP is written by Bogdano Arendartchuk <debogdano@gmail.com>. It is based on \fBiurt\fP and borrows ideas from \fBhasher\fP and \fBmocker\fP.

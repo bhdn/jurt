@@ -83,6 +83,7 @@ install -m 0770 -d %buildroot/%_var/spool/jurt/chroots/cached
 %attr(1770,root,jurt) %dir %_var/spool/jurt/chroots/old/
 %attr(1770,root,jurt) %dir %_var/spool/jurt/chroots/keep/
 %_var/spool/jurt/chroots/cached/
+%{_mandir}/*/*
 
 %files suid
 %_sbindir/jurt-suid

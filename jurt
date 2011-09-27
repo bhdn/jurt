@@ -37,7 +37,7 @@ Basic commands:          (alias)
     jurt-list-roots      (jurt lr)
     jurt-put
 
-For more information run <COMMAND> --help\
+For more information run <COMMAND> --help and jurt(1)\
 """
 
 ALIASES = {
