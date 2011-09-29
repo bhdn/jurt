@@ -79,6 +79,12 @@ class PackageManager(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def files_to_pull(self):
+        """Provides a list of globs of PM files that can be pulled from a
+        root"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def validate_cmd_args(self, args):
         raise NotImplementedError
 
@@ -226,6 +232,7 @@ class URPMIPackageManager(PackageManager):
                 "rpm-build-macros")
         if packager == "undefined":
             packager = None
+        filestopull = shlex.split(pmconf.pull_glob)
         return dict(basepkgs=basepkgs,
                 interactivepkgs=interactivepkgs,
                 rootsdir=pmconf.roots_path,
@@ -250,14 +257,15 @@ class URPMIPackageManager(PackageManager):
                 urpmifatalexpr=urpmifatalexpr,
                 ignoremediasexpr=ignoremediasexpr,
                 listmediascmd=listmediascmd,
-                extramacros=extramacros)
+                extramacros=extramacros,
+                filestopull=filestopull)
 
     def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
             urpmicmd, genhdlistcmd, addmediacmd, updatecmd, rpmarchcmd,
             rpmpackagercmd, basepkgs, interactivepkgs, urpmiopts,
             urpmivalidopts, allowedpmcmds, defpackager, packager,
             rpmtopdir, rpmsubdirs, rpmmacros, rpmlistpkgs, urpmifatalexpr,
-            ignoremediasexpr, listmediascmd, extramacros):
+            ignoremediasexpr, listmediascmd, extramacros, filestopull):
         self.rootsdir = rootsdir
         self.basepkgs = basepkgs
         self.interactivepkgs = interactivepkgs
@@ -283,6 +291,7 @@ class URPMIPackageManager(PackageManager):
         self.ignoremediasexpr = ignoremediasexpr
         self.listmediascmd = listmediascmd
         self.extramacros = extramacros
+        self.filestopull = filestopull
 
     def repos_from_config(self, configstr):
         return URPMIRepos(configstr, self.listmediascmd,
@@ -519,6 +528,9 @@ class URPMIPackageManager(PackageManager):
         args = self.genhdlistcmd[:]
         args.append(path)
         cmd.run(args)
+
+    def files_to_pull(self):
+        return self.filestopull[:]
 
     def get_source_info(self, path):
         from jurtlib.rpmpackage import RPMPackage

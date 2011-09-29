@@ -202,11 +202,18 @@ class Chroot(Root):
         return destpath
 
     def copy_out(self, sourcepaths, dstpath, uid=None, gid=None,
-            mode="0644"):
+            mode="0644", sameuser=False):
         realsources = [os.path.abspath(self.path + "/" + path)
             for path in sourcepaths]
-        self.manager.su().copyout(realsources, dstpath, uid=uid, gid=gid,
-                mode=mode)
+        if sameuser:
+            from jurtlib.cmd import run
+            args = self.manager.putcopycmd[:]
+            args.extend(realsources)
+            args.append(dstpath)
+            run(args)
+        else:
+            self.manager.su().copyout(realsources, dstpath, uid=uid, gid=gid,
+                    mode=mode)
 
     def mkdir(self, path_or_paths, uid=None, gid=None, mode="0755"):
         if isinstance(path_or_paths, basestring):

@@ -1,0 +1,70 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# This file is part of Jurt Build Bot.
+#
+# Jurt Build Bot is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# Jurt Build Bot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Jurt Build Bot; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+from jurtlib.command import JurtCommand, CliError
+
+DESCR = """\
+Copies all files inside SPECS and SOURCES inside a root to a given
+destination directory. If the destination directory is omitted it will use
+the current directory.
+
+/!\\ WARNING: it overwrites any existing file in the destination directory!
+"""
+
+class Pull(JurtCommand):
+
+    descr = DESCR
+    usage = "%prog [opts] [DESTDIR]"
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-t", "--target", type="string",
+                help="Target rooot name (jurt-list-targets for a list)")
+        parser.add_option("-p", "--preserve", default=False,
+                action="store_true",
+                help="Do not overwrite any existing files")
+        parser.add_option("-n", "--dry-run", default=False,
+                action="store_true",
+                help="Only list files to be copied")
+        parser.add_option("-i", "--id", default=None,
+                help=("Enter in an (supposedly) existing root named "
+                    "ID (see -l)"))
+        parser.add_option("-l", "--latest", default=True,
+                action="store_true",
+                help="Use the latest created root (default)")
+
+    def run(self):
+        if self.opts.id:
+            id = self.opts.id
+        else:
+            id = "latest"
+        if self.args:
+            dest = self.args[0]
+        else:
+            dest = "."
+        for path, dstpath in self.jurt.pull(self.args,
+                targetname=self.opts.target, id=id, dest=dest,
+                overwrite=not self.opts.preserve,
+                dryrun=self.opts.dry_run):
+            print dstpath
+
+Pull().main()

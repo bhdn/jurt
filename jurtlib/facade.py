@@ -102,6 +102,13 @@ class JurtFacade:
         target = self.get_target(targetname, id, interactive=True)
         target.put(paths, id)
 
+    def pull(self, paths, targetname, id, dest, overwrite=False,
+            dryrun=False):
+        target = self.get_target(targetname, id, interactive=True)
+        for info in target.pull(paths, id, dest, overwrite=overwrite,
+                dryrun=dryrun):
+            yield info
+
     def check_permissions(self, interactive=True):
         self._init_targets()
         if not self.targets:

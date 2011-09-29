@@ -108,6 +108,30 @@ class Target:
         for path in paths:
             root.copy_in(path, homedir, sameuser=True)
 
+    def pull(self, paths, id, dest, overwrite=True, dryrun=False):
+        root = self.rootmanager.get_root_by_name(id, self.packagemanager,
+                interactive=True)
+        self.builder.set_interactive()
+        username, uid = self.builder.build_user_info()
+        homedir = os.path.abspath(self.builder.build_user_home(username))
+        for partialglob in self.packagemanager.files_to_pull():
+            globexpr = os.path.join(homedir, partialglob)
+            found = root.glob(globexpr)
+            for path in found:
+                path = os.path.abspath(path)
+                subpath = path[len(homedir)+2:]
+                destpath = os.path.join(dest, subpath)
+                if not overwrite and os.path.exists(destpath):
+                    logger.warn("already exists, skipping: %s", destpath)
+                    continue
+                destdir = os.path.dirname(destpath)
+                if not dryrun:
+                    if not os.path.exists(destdir):
+                        logger.debug("creating directories for %s", destdir)
+                        os.makedirs(destdir)
+                    root.copy_out([path], destpath, sameuser=True)
+                yield path, destpath
+
     def list_roots(self):
         for rootinfo in self.rootmanager.list_roots():
             yield rootinfo
