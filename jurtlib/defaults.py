@@ -152,6 +152,11 @@ chroot-mountpoints = jurt-proc /proc proc defaults |
     jurt-pts /dev/pts devpts defaults |
     jurt-shm /dev/shm tmpfs defaults
 chroot-binds =
+chroot-devs = /dev/null c 1 3 0666 |
+   /dev/zero c 1 5 0666 |
+   /dev/random c 1 8 0666 |
+   /dev/urandom c 1 9 0666 |
+   /dev/tty c 5 0 0666
 
 interactive-packages = sudo
 allow-interactive-shell = yes

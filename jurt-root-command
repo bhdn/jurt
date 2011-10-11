@@ -25,6 +25,7 @@ import os
 import shlex
 from jurtlib import Error, CommandError
 from jurtlib.command import JurtCommand, CliError
+from jurtlib.root import ChrootRootManager
 
 PROC_MOUNTS = "/proc/mounts"
 
@@ -142,6 +143,13 @@ class RootCommand(JurtCommand):
         def w(self):
             if not self.opts.root:
                 raise CliError, "--root is required for this command"
+            return f(self)
+        return w
+
+    def _requires_chroot(f):
+        def w(self):
+            if not isinstance(self.target.rootmanager, ChrootRootManager):
+                raise CliError, "root for the target %s is not a chroot"
             return f(self)
         return w
 
@@ -325,6 +333,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
+    @_requires_chroot
     def cmd_mountall(self):
         mounted = self._parse_proc_mounts()
         for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
@@ -347,6 +356,7 @@ class RootCommand(JurtCommand):
 
     @_requires_target
     @_requires_root
+    @_requires_chroot
     def cmd_umountall(self):
         mounted = self._parse_proc_mounts()
         for devpath, mountpoint, fsname, options in self.target.rootmanager.mount_points():
@@ -356,6 +366,29 @@ class RootCommand(JurtCommand):
                 args = ["umount", mountpoint]
                 if not self.opts.dry_run:
                     self._exec(args)
+
+    @_requires_target
+    @_requires_root
+    @_requires_chroot
+    def cmd_createdevs(self):
+        prevumask = os.umask(0)
+        try:
+            for devname, type, major, minor, mode in self.target.rootmanager.devices():
+                abspath = os.path.abspath(self.opts.root + os.path.sep + devname)
+                absdir = os.path.dirname(abspath)
+                if not os.path.exists(absdir):
+                    try:
+                        os.makedirs(absdir)
+                    except EnvironmentError, e:
+                        raise Error, ("failed to create device directory: %s" %
+                                (e))
+                try:
+                    dev = os.makedev(major, minor)
+                    os.mknod(abspath, type | mode, dev)
+                except EnvironmentError, e:
+                    raise Error, "failed to create device: %s" % (e)
+        finally:
+            os.umask(prevumask)
 
     def _tmp_cachepath(self, cachepath):
         import tempfile

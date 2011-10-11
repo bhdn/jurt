@@ -307,6 +307,23 @@ class ChrootRootManager(RootManager):
         return class_._parse_conf_fields(rawvalue, 2, "binds")
 
     @classmethod
+    def _parse_devs(class_, rawvalue):
+        import stat
+        typemap = {"b": stat.S_IFBLK, "c": stat.S_IFCHR}
+        rawdevs = class_._parse_conf_fields(rawvalue, 5, "devices")
+        devs = []
+        try:
+            devs = [(name, typemap[type], int(rawmajor), int(rawminor),
+                     int(rawmode, 8))
+                    for (name, type, rawmajor, rawminor, rawmode) in rawdevs]
+        except KeyError:
+            logger.warn("invalid type for device in list of devices: %s",
+                    rawvalue)
+        except ValueError:
+            logger.warn("invalid integer in list of devices: %s", rawvalue)
+        return devs
+
+    @classmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
         copyfiles = shlex.split(rootconf.root_copy_files)
         postcmd = rootconf.root_post_command.strip()
@@ -325,6 +342,7 @@ class ChrootRootManager(RootManager):
         interactivefile = rootconf.chroot_interactive_file.strip()
         mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
         binds = class_._parse_binds(rootconf.chroot_binds)
+        devs = class_._parse_devs(rootconf.chroot_devs)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -345,13 +363,14 @@ class ChrootRootManager(RootManager):
             targetfile=targetfile,
             interactivefile=interactivefile,
             mountpoints=mountpoints,
-            binds=binds)
+            binds=binds,
+            devs=devs)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
             oldstatedir, keepstatedir, latestsuffix_build,
             latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
-            interactivefile, mountpoints, binds):
+            interactivefile, mountpoints, binds, devs):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -374,6 +393,7 @@ class ChrootRootManager(RootManager):
         self.interactivefile = interactivefile
         self.mountpoints = mountpoints
         self.binds = binds
+        self.devs = devs
 
     def su(self):
         return self.suwrapper
@@ -529,6 +549,7 @@ class ChrootRootManager(RootManager):
         self._check_new_root_name(name, forcenew)
         path = self._temp_path(name)
         self.su().mkdir(path)
+        self.su().create_devs(path)
         packagemanager.create_root(self.suwrapper, repos, path, logger,
                 interactive)
         arch = self._root_arch(packagemanager)
@@ -676,6 +697,10 @@ class ChrootRootManager(RootManager):
             yield mountinfo
         for bindinfo in self.binds:
             yield bindinfo[0], bindinfo[1], "bind", None
+
+    # run as root
+    def devices(self):
+        return self.devs[:]
 
 class CachedManagerMixIn:
 

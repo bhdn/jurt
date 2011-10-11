@@ -265,6 +265,9 @@ class JurtRootWrapper(SuWrapper):
             args.extend(path_or_paths)
         return self._exec_wrapper("mkdir", args)
 
+    def create_devs(self, root):
+        self._exec_wrapper("createdevs", root=root, args=[])
+
     def _copy_args(self, src_path_or_paths, dstpath, uid=None, gid=None, mode="0644"):
         args = self._perm_args(uid, gid, mode)
         if isinstance(src_path_or_paths, basestring):
