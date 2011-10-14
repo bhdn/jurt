@@ -119,6 +119,8 @@ rpm-list-packages-command = %(rpm-command)s -qa --qf
 rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
 rpm-build-macros =
+rpm-collect-glob-doc = note that each expression of rpm-collect-glob-doc
+            will be prefixed with the homedir path before being used
 rpm-collect-glob = RPMS/*/*.rpm SRPMS/*.src.rpm
 rpm-get-arch-command = %(rpm-command)s --eval
     '%%{?mandriva_arch}%%{?!mandriva_arch:%%{_build_arch}}'
