@@ -173,7 +173,7 @@ class JurtRootWrapper(SuWrapper):
 
     def _exec_wrapper(self, type, args, root=None, arch=None,
             outputlogger=None, timeout=None, ignoreerrors=False,
-            interactive=False):
+            interactive=False, quiet=False):
         assert not (interactive and outputlogger)
 
         basecmd = self.jurtrootcmd[:]
@@ -187,6 +187,8 @@ class JurtRootWrapper(SuWrapper):
             basecmd.extend(("--arch", arch))
         if ignoreerrors:
             basecmd.append("--ignore-errors")
+        if quiet:
+            basecmd.append("--quiet")
         basecmd.extend(args)
 
         if interactive:
@@ -199,7 +201,7 @@ class JurtRootWrapper(SuWrapper):
             output = "(interactive command, no output)"
         else:
             cmdline = subprocess.list2cmdline(basecmd)
-            if outputlogger:
+            if outputlogger and not quiet:
                 outputlogger.write(">>>> running privilleged agent: %s\n" % (cmdline))
                 outputlogger.flush()
             if not self.agentrunning:
@@ -237,11 +239,11 @@ class JurtRootWrapper(SuWrapper):
                 outputlogger=outputlogger)
 
     def run_as(self, args, user, root=None, arch=None, timeout=None,
-            outputlogger=None):
+            outputlogger=None, quiet=False):
         execargs = ["--run-as", user, "--"]
         execargs.extend(args)
         return self._exec_wrapper("runcmd", execargs, root=root, arch=arch,
-                timeout=timeout, outputlogger=outputlogger)
+                timeout=timeout, outputlogger=outputlogger, quiet=quiet)
 
     def _perm_args(self, uid, gid, mode):
         args = []
@@ -343,9 +345,11 @@ class SuChrootWrapper:
         return self.suwrapper.run_package_manager(pmname, pmargs,
                 root=self.root.path, arch=self.root.arch, outputlogger=outputlogger)
 
-    def run_as(self, args, user, timeout=None, outputlogger=None):
+    def run_as(self, args, user, timeout=None, outputlogger=None,
+            quiet=False):
         return self.suwrapper.run_as(args, user=user, root=self.root.path,
-                arch=self.root.arch, timeout=timeout, outputlogger=outputlogger)
+                arch=self.root.arch, timeout=timeout,
+                outputlogger=outputlogger, quiet=quiet)
 
     def post_root_command(self):
         return self.suwrapper.post_root_command(root=self.root.path,

@@ -176,7 +176,7 @@ class RootCommand(JurtCommand):
         else:
             allcmd.extend(args)
         cmdline = subprocess.list2cmdline(allcmd)
-        if not interactive:
+        if not interactive and not self.opts.quiet:
             sys.stderr.write(">>>>>> running: %s\n" % (cmdline))
             sys.stderr.flush()
         if not self.opts.dry_run:
