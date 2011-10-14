@@ -102,13 +102,13 @@ class RootCommand(JurtCommand):
                         try:
                             self._handle_command()
                         except CommandError, e:
-                            sys.stderr.write("%sERROR %d %s\n" %
+                            sys.stderr.write("\n%sERROR %d %s\n" %
                                     (cookiepart, e.returncode, e))
                         except Error, e:
-                            sys.stderr.write("%sERROR %s\n" %
+                            sys.stderr.write("\n%sERROR %s\n" %
                                     (cookiepart, e))
                         else:
-                            sys.stderr.write("%sOK\n" % (cookiepart))
+                            sys.stderr.write("\n%sOK\n" % (cookiepart))
                         sys.stderr.flush()
                     except IOError, e:
                         if e.errno == 32: # broken pipe

@@ -108,25 +108,28 @@ class JurtRootWrapper(SuWrapper):
 
     def _check_agent_output(self, data):
         returncode = None
-        lines = data.strip().splitlines()
-        for line in lines:
-            if line.startswith(self.agentcookie):
-                status = line.split(None, 2)[1]
-                if status == "OK":
-                    returncode = 0
-                elif status == "ERROR":
-                    logger.debug("agent ERROR line: %s", line)
+        newdata = data
+        magic = "\n" + self.agentcookie
+        index = data.find(magic)
+        if index != -1:
+            newdata = data[:index]
+            tail = data[index:]
+            status = tail.split(None, 2)[1]
+            if status == "OK":
+                returncode = 0
+            elif status == "ERROR":
+                logger.debug("agent ERROR line: %s", tail)
+                try:
+                    rawreason = tail.split(None, 3)[2]
+                except IndexError:
+                    pass # ignore invalid stderr messages
+                else:
                     try:
-                        rawreason = line.split(None, 3)[2]
-                    except IndexError:
-                        pass # ignore invalid stderr messages
-                    else:
-                        try:
-                            reason = int(rawreason)
-                        except ValueError:
-                            reason = 1
-                        returncode = reason
-        return returncode
+                        reason = int(rawreason)
+                    except ValueError:
+                        reason = 1
+                    returncode = reason
+        return returncode, newdata
 
     def _collect_from_agent(self, targetfile, outputlogger):
         rfd = self.agentproc.stdout.fileno()
@@ -152,8 +155,8 @@ class JurtRootWrapper(SuWrapper):
                 targetfile.write(data)
             if efd in nrl:
                 data = os.read(efd, 8196)
-                targetfile.write(data)
-                returncode = self._check_agent_output(data)
+                returncode, newdata = self._check_agent_output(data)
+                targetfile.write(newdata)
                 if returncode is not None:
                     done = True
             if self.agentproc.poll() is not None:
