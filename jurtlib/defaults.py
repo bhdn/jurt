@@ -120,7 +120,8 @@ rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
 rpm-build-macros =
 rpm-collect-glob = RPMS/*/*.rpm SRPMS/*.src.rpm
-rpm-get-arch-command = %(rpm-command)s --eval '%%{mandriva_arch}'
+rpm-get-arch-command = %(rpm-command)s --eval
+    '%%{?mandriva_arch}%%{?!mandriva_arch:%%{_build_arch}}'
 rpm-get-packager-command = %(rpm-command)s
           --eval '%%{?packager}%%{?!packager:PACKAGER_UNDEFINED}'
 rpm-packager-doc = If rpm-packager is not set, then jurt tried to get from
