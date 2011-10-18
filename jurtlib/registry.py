@@ -40,5 +40,5 @@ class Registry:
         try:
             class_ = self._classes[name]
         except KeyError:
-            raise Error, "no such %s: %s" % (self.description, name)
+            raise Error, "unknown such %s: %s" % (self.description, name)
         return class_
