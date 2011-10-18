@@ -28,7 +28,7 @@ import shlex
 import shutil
 from jurtlib import CommandError, util
 from jurtlib.registry import Registry
-from jurtlib.config import parse_bool
+from jurtlib.configutil import parse_bool
 from jurtlib.spool import Spool
 from jurtlib.su import my_username
 

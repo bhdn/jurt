@@ -31,13 +31,6 @@ log = logging.getLogger("jurt.config")
 class ConfigError(Error):
     pass
 
-def parse_bool(raw):
-    raw = raw.strip().lower()
-    if raw in ("yes", "true"):
-        return True
-    else:
-        return False
-
 class SectionWrapper(object):
 
     _config = None

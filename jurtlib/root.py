@@ -28,7 +28,7 @@ import time
 from jurtlib import Error, util
 from jurtlib.registry import Registry
 from jurtlib.su import SuChrootWrapper, my_username
-from jurtlib.config import parse_bool
+from jurtlib.configutil import parse_bool, parse_conf_fields
 
 logger = logging.getLogger("jurt.root")
 
@@ -286,31 +286,18 @@ class ChrootRootManager(RootManager):
         return map
 
     @classmethod
-    def _parse_conf_fields(self, rawvalue, nofields, name):
-        entries = []
-        for rawentry in rawvalue.split("|"):
-            if rawentry:
-                fields = shlex.split(rawentry)
-                if len(fields) != nofields:
-                    logger.warn("expected %d fields in %s "
-                            "entry: %s", nofields, name, rawentry)
-                else:
-                    entries.append(fields)
-        return entries
-
-    @classmethod
     def _parse_mount_points(class_, rawvalue):
-        return class_._parse_conf_fields(rawvalue, 4, "mountpoint")
+        return parse_conf_fields(rawvalue, 4, "mountpoint")
 
     @classmethod
     def _parse_binds(class_, rawvalue):
-        return class_._parse_conf_fields(rawvalue, 2, "binds")
+        return parse_conf_fields(rawvalue, 2, "binds")
 
     @classmethod
     def _parse_devs(class_, rawvalue):
         import stat
         typemap = {"b": stat.S_IFBLK, "c": stat.S_IFCHR}
-        rawdevs = class_._parse_conf_fields(rawvalue, 5, "devices")
+        rawdevs = parse_conf_fields(rawvalue, 5, "devices")
         devs = []
         try:
             devs = [(name, typemap[type], int(rawmajor), int(rawminor),
