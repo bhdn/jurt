@@ -108,7 +108,7 @@ urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       tune-rpm= nofdigests raw
 urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
-urpmi-fatal-output = (No space left on device|A requested package cannot be installed)
+urpmi-fatal-output = (No space left on device|A requested package cannot be installed|Some requested packages cannot be installed)
 
 interactive-allowed-rpm-commands = /bin/rpm
 interactive-allowed-urpmi-commands = /usr/sbin/urpmi
