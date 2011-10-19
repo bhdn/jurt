@@ -66,6 +66,9 @@ class RootCommand(JurtCommand):
         parser.add_option("--cookie", type="string", default=None,
                 help=("Set the cookie to use as prefix in control "
                     "output"))
+        parser.add_option("--ignore-stderr", default=False,
+                action="store_true",
+                help=("Redirect stderr to /dev/null"))
 
     def config_files(self, config):
         return [config.conf.system_file]
@@ -175,12 +178,16 @@ class RootCommand(JurtCommand):
             allcmd.append(subprocess.list2cmdline(args)) # blarg
         else:
             allcmd.extend(args)
+        if self.opts.ignore_stderr:
+            stderr = open(os.devnull)
+        else:
+            stderr = None
         cmdline = subprocess.list2cmdline(allcmd)
         if not interactive and not self.opts.quiet:
             sys.stderr.write(">>>>>> running: %s\n" % (cmdline))
             sys.stderr.flush()
         if not self.opts.dry_run:
-            p = subprocess.Popen(args=allcmd, shell=False)
+            p = subprocess.Popen(args=allcmd, stderr=stderr, shell=False)
             p.wait()
             if not self.opts.ignore_errors:
                 if p.returncode != 0:

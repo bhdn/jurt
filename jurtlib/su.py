@@ -176,7 +176,7 @@ class JurtRootWrapper(SuWrapper):
 
     def _exec_wrapper(self, type, args, root=None, arch=None,
             outputlogger=None, timeout=None, ignoreerrors=False,
-            interactive=False, quiet=False):
+            interactive=False, quiet=False, ignorestderr=False):
         assert not (interactive and outputlogger)
 
         basecmd = self.jurtrootcmd[:]
@@ -192,6 +192,8 @@ class JurtRootWrapper(SuWrapper):
             basecmd.append("--ignore-errors")
         if quiet:
             basecmd.append("--quiet")
+        if ignorestderr:
+            basecmd.append("--ignore-stderr")
         basecmd.extend(args)
 
         if interactive:
@@ -242,11 +244,12 @@ class JurtRootWrapper(SuWrapper):
                 outputlogger=outputlogger)
 
     def run_as(self, args, user, root=None, arch=None, timeout=None,
-            outputlogger=None, quiet=False):
+            outputlogger=None, quiet=False, ignorestderr=False):
         execargs = ["--run-as", user, "--"]
         execargs.extend(args)
         return self._exec_wrapper("runcmd", execargs, root=root, arch=arch,
-                timeout=timeout, outputlogger=outputlogger, quiet=quiet)
+                timeout=timeout, outputlogger=outputlogger, quiet=quiet,
+                ignorestderr=ignorestderr)
 
     def _perm_args(self, uid, gid, mode):
         args = []
@@ -349,10 +352,11 @@ class SuChrootWrapper:
                 root=self.root.path, arch=self.root.arch, outputlogger=outputlogger)
 
     def run_as(self, args, user, timeout=None, outputlogger=None,
-            quiet=False):
+            quiet=False, ignorestderr=False):
         return self.suwrapper.run_as(args, user=user, root=self.root.path,
                 arch=self.root.arch, timeout=timeout,
-                outputlogger=outputlogger, quiet=quiet)
+                outputlogger=outputlogger, quiet=quiet,
+                ignorestderr=ignorestderr)
 
     def post_root_command(self):
         return self.suwrapper.post_root_command(root=self.root.path,
