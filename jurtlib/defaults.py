@@ -108,20 +108,38 @@ urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
                       tune-rpm= nofdigests raw
 urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
-interactive-allowed-urpmi-commands = /bin/rpm /usr/sbin/urpmi
-   /usr/sbin/urpme /usr/sbin/urpmi.addmedia /usr/sbin/urpmi.update
-   /usr/sbin/urpmi.removemedia
 urpmi-fatal-output = (No space left on device|A requested package cannot be installed)
 
+interactive-allowed-rpm-commands = /bin/rpm
+interactive-allowed-urpmi-commands = /usr/sbin/urpmi
+   /usr/sbin/urpme /usr/sbin/urpmi.addmedia /usr/sbin/urpmi.update
+   /usr/sbin/urpmi.removemedia
+interactive-allowed-smart-commands = /usr/bin/smart
+
+smart-command = /usr/bin/smart
+smart-options = -o sync-urpmi-medialist=no
+smart-channel-add-command = %(smart-command)s channel %(smart-options)s --yes --add
+smart-install-command = %(smart-command)s install --yes %(smart-options)s
+smart-update-command = %(smart-command)s update %(smart-options)s
+smart-datadir = /var/lib/smart
+smart-spool-channel = build-spool type=urpmi "baseurl=$path"
+                      hdlurl=media_info/synthesis.hdlist.cz
+smart-spool-update-command = /usr/bin/genhdlist2
+                            --allow-empty-media "$path"
 rpm-command = /bin/rpm
 rpm-list-packages-command = %(rpm-command)s -qa --qf
     'n=%%{name} e=%%{epoch} v=%%{version} r=%%{release} de=%%{distepoch} dt=%%{disttag}\\n'
 rpm-install-source-command = %(rpm-command)s --nodeps -i
 rpm-build-source-command = /usr/bin/rpmbuild
+rpm-skip-build-deps = ^rpmlib\\(
+rpm-replace-build-deps = ([^=<>]+)[=<>].* \\\\1
 rpm-build-macros =
 rpm-collect-glob-doc = note that each expression of rpm-collect-glob-doc
             will be prefixed with the homedir path before being used
 rpm-collect-glob = RPMS/*/*.rpm SRPMS/*.src.rpm
+rpm-buildreqs-from-spec-command = %(rpm-command)s -q --requires --specsrpm
+rpm-buildreqs-from-srpm-command = %(rpm-command)s -q --requires -p
+rpm-recreate-srpm-command = %(rpm-build-source-command)s -bs
 rpm-get-arch-command = %(rpm-command)s --eval
     '%%{?mandriva_arch}%%{?!mandriva_arch:%%{_build_arch}}'
 rpm-get-packager-command = %(rpm-command)s
