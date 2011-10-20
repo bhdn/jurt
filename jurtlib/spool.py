@@ -49,6 +49,9 @@ class Spool:
                 dest = os.path.join(self.path, os.path.basename(path))
                 spoolpaths.append(dest)
                 logger.debug("creating hardlink from %s to %s" % (path, dest))
+                if os.path.exists(dest):
+                    logger.debug("%s already exists, removing it", dest)
+                    os.unlink(dest)
                 os.link(path, dest)
             else:
                 logger.debug("not copying %s to the spool at %s" % (path,
