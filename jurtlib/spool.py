@@ -21,8 +21,12 @@
 #
 import os
 import logging
+from jurtlib import Error
 
 logger = logging.getLogger("jurt.spool")
+
+class SpoolError(Error):
+    pass
 
 class Spool:
 
@@ -31,8 +35,12 @@ class Spool:
         self.packagemanager = packagemanager
 
     def create_dirs(self):
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+        try:
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
+        except EnvironmentError, e:
+            raise SpoolError, ("error while trying to create directory: %s"
+                    % (e))
         self._update()
 
     def _update(self):
@@ -51,7 +59,11 @@ class Spool:
                 logger.debug("creating hardlink from %s to %s" % (path, dest))
                 if os.path.exists(dest):
                     logger.debug("%s already exists, removing it", dest)
-                    os.unlink(dest)
+                    try:
+                        os.unlink(dest)
+                    except EnvironmentError, e:
+                        raise SpoolError, ("failed to remove package from "
+                                "root spool: %s" % (e))
                 os.link(path, dest)
             else:
                 logger.debug("not copying %s to the spool at %s" % (path,
