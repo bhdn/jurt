@@ -20,6 +20,7 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+import sys
 from distutils.core import setup
 
 setup(name="jurt",
@@ -52,4 +53,7 @@ setup(name="jurt",
             ("share/man/man1/", ["jurt.1"])]
     )
 
-
+if len(sys.argv) > 1 and sys.argv[1] == "install":
+    sys.stderr.write("WARNING: jurt-root-command has been "
+            "installed on /usr/bin instead of /usr/sbin, you will "
+            "have to fix it manually!\n")
