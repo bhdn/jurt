@@ -560,7 +560,7 @@ class URPMIPackageManager(RPMBasedPackageManager):
                     "installation, detailed error log at: %s" %
                     (outputlogger.location()))
 
-    def setup_repositories(self, root, repos, logstore, rootspool=None):
+    def setup_repositories(self, root, repos, logstore, spool=None):
         if spool:
             rootspool = root.make_spool_reachable(spool)
         outputlogger = logstore.get_output_handler("addmedia")
