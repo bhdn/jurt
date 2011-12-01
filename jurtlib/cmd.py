@@ -19,13 +19,21 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+import os
 import subprocess
 from jurtlib import Error
 
 class CommandError(Error):
     pass
 
-def run(args, error=False):
+def run(args, error=False, stderr=False):
+    if stderr:
+        stderr = subprocess.STDOUT
+    else:
+        if os.path.exists(os.devnull):
+            stderr = open(os.devnull)
+        else:
+            stderr = None
     proc = subprocess.Popen(args=args, shell=False,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     proc.wait()
