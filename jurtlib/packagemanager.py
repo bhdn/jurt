@@ -111,28 +111,24 @@ class URPMIRepos(Repos):
         self.listmediascmd = listmediascmd
         self.ignoremediasexpr = ignoremediasexpr
         if configline.strip() == self.use_from_system_line:
-            self._medias = self._distribs = None
+            self._medias = None
         else:
-            self._medias, self._distribs = self.parse_conf(configline)
+            self._medias = self.parse_conf(configline)
 
     @classmethod
     def parse_conf(class_, configline):
         medias = []
-        distribs = []
         for conf in configline.split("|"):
             conf = conf.strip()
             if not conf:
                 continue
-            fields = conf.split(None, 1)
+            fields = shlex.split(conf)
             if len(fields) < 2:
                 logger.warn("suspiciously small number of fields in "
                         "urpmi media configuration: %s" % (conf))
                 continue
-            elif fields[0] == "--distrib":
-                distribs.append(fields[1])
-            else:
-                medias.append(fields)
-        return medias, distribs
+            medias.append(fields)
+        return medias
 
     def _medias_from_system(self):
         try:
@@ -153,22 +149,14 @@ class URPMIRepos(Repos):
         return found
 
     def medias(self):
-        # as we can't easily figure 'distribs' used in our system, we are
-        # going to assume only medias can be fetched
-        if self._medias is None and self._distribs is None:
+        if self._medias is None:
             logger.debug("no medias defined, going to fetch medias "
                     "from system")
             self._medias = self._medias_from_system()
-            self._distribs = []
         return self._medias[:]
 
-    def distribs(self):
-        if self._distribs is None:
-            self.medias()
-        return self._distribs[:]
-
     def empty(self):
-        return not self._medias and not self._distribs
+        return not self._medias
 
 def compile_conf_re(value, field):
     try:
@@ -525,10 +513,6 @@ class URPMIPackageManager(RPMBasedPackageManager):
 
     def create_root(self, suwrapper, repos, path, logger, interactive):
         mediacmds = []
-        for distrib in repos.distribs():
-            argsmedia = ["--urpmi-root", path]
-            argsmedia.extend(("--distrib", distrib))
-            mediacmds.append(argsmedia)
         for media in repos.medias():
             argsmedia = ["--urpmi-root", path]
             argsmedia.extend(media)
