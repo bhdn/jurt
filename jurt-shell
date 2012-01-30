@@ -36,7 +36,7 @@ class Shell(JurtCommand):
     def init_parser(self, parser):
         JurtCommand.init_parser(self, parser)
         parser.add_option("-t", "--target", type="string",
-                help="Target rooot name (jurt-list-targets for a list)")
+                help="Target root name (jurt-list-targets for a list)")
         parser.add_option("-i", "--id", default=None,
                 help=("Enter in an (supposedly) existing root named "
                     "ID (see -l)"))
