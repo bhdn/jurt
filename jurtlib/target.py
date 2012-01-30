@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -135,6 +135,10 @@ class Target:
     def list_roots(self):
         for rootinfo in self.rootmanager.list_roots():
             yield rootinfo
+
+    def clean(self, dry_run=False):
+        for info in self.rootmanager.clean(dry_run):
+            yield info
 
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()

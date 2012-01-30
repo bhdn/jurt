@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -44,6 +44,7 @@ setup(name="jurt",
                 "jurt-test-sudo",
                 "jurt-list-targets",
                 "jurt-list-roots",
+                "jurt-clean",
         ],
         data_files = [
             ('/etc/jurt/',

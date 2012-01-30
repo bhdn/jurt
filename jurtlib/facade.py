@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -108,6 +108,12 @@ class JurtFacade:
         for info in target.pull(paths, id, dest, overwrite=overwrite,
                 dryrun=dryrun):
             yield info
+
+    def clean(self, dry_run=False):
+        self._init_targets()
+        for target in self.targets.values():
+            for info in target.clean(dry_run):
+                yield info
 
     def check_permissions(self, interactive=True):
         self._init_targets()

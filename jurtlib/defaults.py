@@ -160,6 +160,9 @@ rpm-macros-file = ~/.rpmmacros
 
 root-copy-files = /etc/hosts /etc/resolv.conf
 root-post-command = passwd -l root; touch /jurt-root
+root-max-age = 14
+root-max-age-doc = Roots older than root-max-age (in days) can be removed by
+    jurt-clean.
 put-copy-command = cp -a
 pull-glob = SPECS/*.spec SOURCES/*
 chroot-destroy-command = rm --recursive --one-file-system --preserve-root

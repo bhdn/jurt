@@ -1,0 +1,45 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# This file is part of Jurt Build Bot.
+#
+# Jurt Build Bot is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# Jurt Build Bot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Jurt Build Bot; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+import sys
+import time
+from jurtlib.command import JurtCommand, CliError
+
+DESCR = """Cleans old roots"""
+
+class Clean(JurtCommand):
+
+    usage = "%prog -t TARGET file.src.rpm..."
+    descr = DESCR
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-n", "--dry-run", default=False,
+            action="store_true",
+            help="Do not remove any root")
+
+    def run(self):
+        for name, timestamp in self.jurt.clean(dry_run=self.opts.dry_run):
+            age = (time.time() - timestamp) // 24 // 60 // 60
+            print "removing %s (%d days)" % (name, age)
+
+Clean().main()

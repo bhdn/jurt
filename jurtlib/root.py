@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -152,6 +152,10 @@ class RootManager(object):
 
     @abc.abstractmethod
     def list_roots(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def clean(self):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -311,6 +315,15 @@ class ChrootRootManager(RootManager):
         return devs
 
     @classmethod
+    def _parse_max_root_age(class_, rawvalue):
+        try:
+            days = int(rawvalue)
+        except ValueError, e:
+            logger.warn("invalid value for max-root-age: %r" % (rawvalue))
+        seconds = days * 24 * 60 * 60
+        return seconds
+
+    @classmethod
     def load_config(class_, suwrapper, rootconf, globalconf):
         copyfiles = shlex.split(rootconf.root_copy_files)
         postcmd = rootconf.root_post_command.strip()
@@ -330,6 +343,7 @@ class ChrootRootManager(RootManager):
         mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
         binds = class_._parse_binds(rootconf.chroot_binds)
         devs = class_._parse_devs(rootconf.chroot_devs)
+        maxrootage = class_._parse_max_root_age(rootconf.root_max_age)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -351,13 +365,14 @@ class ChrootRootManager(RootManager):
             interactivefile=interactivefile,
             mountpoints=mountpoints,
             binds=binds,
-            devs=devs)
+            devs=devs,
+            maxrootage=maxrootage)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
             oldstatedir, keepstatedir, latestsuffix_build,
             latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
-            interactivefile, mountpoints, binds, devs):
+            interactivefile, mountpoints, binds, devs, maxrootage):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -381,6 +396,7 @@ class ChrootRootManager(RootManager):
         self.mountpoints = mountpoints
         self.binds = binds
         self.devs = devs
+        self.maxrootage = maxrootage
 
     def su(self):
         return self.suwrapper
@@ -600,13 +616,13 @@ class ChrootRootManager(RootManager):
                     "interactive use" % (name))
         return chroot
 
-    def list_roots(self):
+    def _list_chroots(self, states=(Active, Old)):
         _, intlatest = self._resolve_latest_link(interactive=True,
                 fail=False)
         _, buildlatest = self._resolve_latest_link(interactive=False,
                 fail=False)
-        for m in (self._active_path, self._old_path):
-            path = m("") # duh
+        for state in states:
+            path = self._root_path(state, "") # duh!
             if os.path.exists(path):
                 try:
                     names = os.listdir(path)
@@ -621,7 +637,11 @@ class ChrootRootManager(RootManager):
                             latest = (intlatest == rootpath
                                     or buildlatest == rootpath)
                             kind = ("build", "interactive")[interactive]
-                            yield name, kind, latest
+                            yield name, rootpath, kind, latest
+
+    def list_roots(self):
+        for name, rootpath, kind, latest in self._list_chroots():
+            yield name, kind, latest
 
     def guess_target_name(self, name, interactive=False):
         found = None
@@ -653,6 +673,29 @@ class ChrootRootManager(RootManager):
                 os.unlink(lpath)
             except EnvironmentError, e:
                 logger.warn("failed to remove the latest link: %s" % (e))
+
+    def is_old(self, timestamp):
+        age = time.time() - timestamp
+        return age > self.maxrootage
+
+    def clean(self, dry_run=False):
+        for name, rootpath, _, latest in self._list_chroots(states=(Old,)):
+            try:
+                timestamp = os.stat(rootpath).st_ctime
+            except EnvironmentError, e:
+                logger.error("failed to stat the directory %s: %s" %
+                        (rootpath, e))
+                continue
+            if self.is_old(timestamp):
+                if latest:
+                    logger.debug("root %s is old, but is marked as "
+                            "'latest' and will not be removed", rootpath)
+                else:
+                    logger.debug("root at %s has timestamp %s and will be "
+                            "destroyed", rootpath, timestamp)
+                    yield name, timestamp
+                    if not dry_run:
+                        self.su().destroy_root(rootpath)
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
