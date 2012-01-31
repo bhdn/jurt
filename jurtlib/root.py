@@ -671,11 +671,12 @@ class ChrootRootManager(RootManager):
                             latest = (intlatest == rootpath
                                     or buildlatest == rootpath)
                             kind = ("build", "interactive")[interactive]
-                            yield name, rootpath, kind, latest
+                            statename = STATE_NAMES[state]
+                            yield name, rootpath, kind, statename, latest
 
     def list_roots(self):
-        for name, rootpath, kind, latest in self._list_chroots():
-            yield name, kind, latest
+        for name, rootpath, kind, state, latest in self._list_chroots():
+            yield name, kind, state, latest
 
     def guess_target_name(self, name, interactive=False):
         found = None
@@ -713,7 +714,7 @@ class ChrootRootManager(RootManager):
         return age > self.maxrootage
 
     def clean(self, dry_run=False):
-        for name, rootpath, _, latest in self._list_chroots(states=(Old,)):
+        for name, rootpath, _, _, latest in self._list_chroots(states=(Old,)):
             try:
                 timestamp = os.stat(rootpath).st_ctime
             except EnvironmentError, e:

@@ -25,17 +25,19 @@ from jurtlib.command import JurtCommand, CliError
 DESCR = """\
 Lists roots available to be used on jurt-shell -i <ID>
 
-The output is in the format TYPE LATEST NAME.
+The output is in the format FLAGS NAME.
 
-TYPE can be:
+FLAGS can be:
 
  b      indicates that it was used for non-interactive build (and thus
         can only be reused for that purpuse)
  i      it can be used for interactive build or shell (jurt-build -b or
         jurt-shell)
-
-LATEST points if the root can be referred with -l on the commands that
-support this option.
+ k      the root is marked to not be destroyed by jurt-clean
+ o      the root is not used and can be destroyed
+ a      the root is active
+ l      the root can be referred with -l on the commands that support this
+        option.
 """
 
 class ListRoots(JurtCommand):
@@ -46,7 +48,10 @@ class ListRoots(JurtCommand):
         JurtCommand.init_parser(self, parser)
 
     def run(self):
-        for name, kind, latest in self.jurt.list_roots():
-            print "%s %s\t%s" % (kind[0], ("", "*")[latest], name)
+        for name, kind, state, latest in self.jurt.list_roots():
+            flag = kind[0] + state[0]
+            if latest:
+                flag += "l"
+            print "%s\t%s" % (flag, name)
 
 ListRoots().main()
