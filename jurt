@@ -36,6 +36,7 @@ Basic commands:          (alias)
     jurt-list-targets    (jurt lt)
     jurt-list-roots      (jurt lr)
     jurt-put
+    jurt-pull
 
 For more information run <COMMAND> --help and jurt(1)\
 """
