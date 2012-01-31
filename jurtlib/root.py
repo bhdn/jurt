@@ -637,7 +637,8 @@ class ChrootRootManager(RootManager):
                         root.interactive)
 
     def get_root_by_name(self, name, packagemanager, interactive=DontCare):
-        state, path = self._existing_root(name, interactive=interactive)
+        state, path = self._existing_root(name, interactive=interactive,
+                required=True)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
         chroot.interactive = self._is_interactive(chroot.path)
