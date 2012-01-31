@@ -115,6 +115,10 @@ class JurtFacade:
             for info in target.clean(dry_run):
                 yield info
 
+    def keep(self, id):
+        target = self.get_target(None, id)
+        target.keep(id)
+
     def check_permissions(self, interactive=True):
         self._init_targets()
         if not self.targets:

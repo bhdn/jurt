@@ -140,6 +140,9 @@ class Target:
         for info in self.rootmanager.clean(dry_run):
             yield info
 
+    def keep(self, id):
+        self.rootmanager.keep(id, self.packagemanager)
+
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()
         self.rootmanager.test_sudo(interactive)

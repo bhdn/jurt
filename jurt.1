@@ -1,5 +1,5 @@
 .\" jurt - Builds packages in a clean root
-.TH "jurt" "1" "2011 Sep 26" "Bogdano Arendartchuk" ""
+.TH "jurt" "1" "2012 Jan 31" "Bogdano Arendartchuk" ""
 .SH "NAME"
 jurt \- Builds packages in a clean root
 .SH "SYNOPSIS"
@@ -39,6 +39,8 @@ Will copy the directory \fBsomedir\fP and the src.rpm to the most recently used 
 Shows all configuration options, including default values, used by jurt. Any value inside the section \fB[any target]\fP can be redefined inside target sections in configuration.
 .IP "\fBjurt clean\fP"
 Removes any root older than the number of days set in the configuration option \fBroot-max-age\fP.
+.IP "\fBjurt keep foo\fP"
+Will prevent a given named root from being destroyed by \fBjurt clean\fP.
 .SH "ENVIRONMENT VARIABLES"
 .PP
 .IP "\fBJURT_CONF\fP"

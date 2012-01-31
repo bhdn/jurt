@@ -47,6 +47,9 @@ class Keep:
 class Old:
     pass
 
+class DontCare:
+    """Whether it must be interactive or not"""
+
 STATE_NAMES = {Temp: "temp", Active: "active", Keep: "keep",
     Old: "old"}
 STATE_DIRS = dict((v, k) for k, v in STATE_NAMES.iteritems())
@@ -340,6 +343,7 @@ class ChrootRootManager(RootManager):
         destroycmd = shlex.split(rootconf.chroot_destroy_command)
         targetfile = rootconf.chroot_target_file.strip()
         interactivefile = rootconf.chroot_interactive_file.strip()
+        keepfile = rootconf.chroot_keep_file.strip()
         mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
         binds = class_._parse_binds(rootconf.chroot_binds)
         devs = class_._parse_devs(rootconf.chroot_devs)
@@ -363,6 +367,7 @@ class ChrootRootManager(RootManager):
             destroycmd=destroycmd,
             targetfile=targetfile,
             interactivefile=interactivefile,
+            keepfile=keepfile,
             mountpoints=mountpoints,
             binds=binds,
             devs=devs,
@@ -372,7 +377,7 @@ class ChrootRootManager(RootManager):
             copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
             oldstatedir, keepstatedir, latestsuffix_build,
             latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
-            interactivefile, mountpoints, binds, devs, maxrootage):
+            interactivefile, keepfile, mountpoints, binds, devs, maxrootage):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -393,6 +398,7 @@ class ChrootRootManager(RootManager):
         self.destroycmd = destroycmd
         self.targetfile = targetfile
         self.interactivefile = interactivefile
+        self.keepfile = keepfile
         self.mountpoints = mountpoints
         self.binds = binds
         self.devs = devs
@@ -579,6 +585,28 @@ class ChrootRootManager(RootManager):
             return True
         return False
 
+    def _keep_file(self, rootpath):
+        return os.path.abspath(rootpath + os.path.sep + self.keepfile)
+
+    def _marked_as_keep(self, rootpath):
+        checkpath = self._keep_file(rootpath)
+        if os.path.exists(checkpath):
+            logger.debug("marked as keep: %s", checkpath)
+            return True
+        return False
+
+    def _keep_root(self, root):
+        """Mark a given root path as 'keep'
+
+        So that we can move it back to 'keep' after activating it.
+        """
+        from tempfile import NamedTemporaryFile
+        tf = NamedTemporaryFile()
+        tf.write("keep\n")
+        tf.flush()
+        root.copy_in(tf.name, self.keepfile)
+        tf.close()
+
     def activate_root(self, root):
         if root.state != Active:
             self._check_state_dirs()
@@ -597,18 +625,24 @@ class ChrootRootManager(RootManager):
             if state == Active:
                 # else: the root has been moved by someone else, just
                 # forget about moving
-                dest = self._old_path(name)
+                if self._marked_as_keep(root.path):
+                    dest = self._keep_path(name)
+                    newstate = Keep
+                else:
+                    dest = self._old_path(name)
+                    newstate = Old
                 self._move_root(root, dest)
-                root.state = Old
+                root.state = newstate
                 self._update_latest_link(root.state, root.path,
                         root.interactive)
 
-    def get_root_by_name(self, name, packagemanager, interactive=False):
+    def get_root_by_name(self, name, packagemanager, interactive=DontCare):
         state, path = self._existing_root(name, interactive=interactive)
         arch = self._root_arch(packagemanager)
         chroot = Chroot(self, path, arch, state, interactive)
         chroot.interactive = self._is_interactive(chroot.path)
-        if interactive and not chroot.interactive:
+        if interactive is not DontCare and \
+                (interactive and not chroot.interactive):
             raise RootError, ("the root %s is not prepared for "
                     "interactive use" % (name))
         elif not interactive and chroot.interactive:
@@ -616,7 +650,7 @@ class ChrootRootManager(RootManager):
                     "interactive use" % (name))
         return chroot
 
-    def _list_chroots(self, states=(Active, Old)):
+    def _list_chroots(self, states=(Active, Old, Keep)):
         _, intlatest = self._resolve_latest_link(interactive=True,
                 fail=False)
         _, buildlatest = self._resolve_latest_link(interactive=False,
@@ -696,6 +730,17 @@ class ChrootRootManager(RootManager):
                     yield name, timestamp
                     if not dry_run:
                         self.su().destroy_root(rootpath)
+
+    def keep(self, id, packagemanager):
+        root = self.get_root_by_name(id, packagemanager)
+        if root.state is Keep:
+            logger.info("%s is already marked as 'keep'", id)
+        else:
+            self._keep_root(root)
+            if root.state != Active:
+                dest = self._keep_path(id)
+                self._move_root(root, dest)
+                root.state = Keep
 
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
