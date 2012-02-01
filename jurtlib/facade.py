@@ -119,6 +119,10 @@ class JurtFacade:
         target = self.get_target(None, id)
         target.keep(id)
 
+    def invalidate(self, target):
+        target = self.get_target(None, None)
+        target.invalidate()
+
     def check_permissions(self, interactive=True):
         self._init_targets()
         if not self.targets:

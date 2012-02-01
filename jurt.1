@@ -41,6 +41,8 @@ Shows all configuration options, including default values, used by jurt. Any val
 Removes any root older than the number of days set in the configuration option \fBroot-max-age\fP.
 .IP "\fBjurt keep foo\fP"
 Will prevent a given named root from being destroyed by \fBjurt clean\fP.
+.IP "\fBjurt invalidate cooker-i586\fP"
+Removes the root cache for a build target named cooker-i586.
 .SH "ENVIRONMENT VARIABLES"
 .PP
 .IP "\fBJURT_CONF\fP"

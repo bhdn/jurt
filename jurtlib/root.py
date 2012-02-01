@@ -161,6 +161,9 @@ class RootManager(object):
     def clean(self):
         raise NotImplementedError
 
+    def invalidate(self, interactive=DontCare):
+        raise RootError, "this root type does not support caching"
+
     @abc.abstractmethod
     def allows_interactive_shell(self):
         raise NotImplementedError
@@ -789,6 +792,18 @@ class CachedManagerMixIn:
             name += "-build"
         return os.path.join(self.topdir, name)
 
+    def _cache_path(self, interactive):
+        return self._cache_base_path(interactive)
+
+    def invalidate(self, interactive=DontCare):
+        if interactive is DontCare:
+            modes = [True, False]
+        else:
+            modes = [interactive]
+        for mode in modes:
+            cachepath = self._cache_path(interactive=mode)
+            if os.path.exists(cachepath):
+                self.su().destroy_root(cachepath)
 
 class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
 
@@ -828,10 +843,13 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
             raise RootError, ("command failed:\n%s\n%s" % (cmdline,
                 output))
 
+    def _cache_path(self, interactive):
+        return self._cache_base_path(interactive) + self.cacheext
+
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):
         self._check_new_root_name(name)
-        cachepath = self._cache_base_path(interactive) + self.cacheext
+        cachepath = self._cache_path(interactive)
         if not os.path.exists(cachepath):
             logger.debug("%s not found, creating new root" % (cachepath))
             if not os.path.exists(self.cachedir):

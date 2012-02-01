@@ -143,6 +143,9 @@ class Target:
     def keep(self, id):
         self.rootmanager.keep(id, self.packagemanager)
 
+    def invalidate(self):
+        self.rootmanager.invalidate()
+
     def check_permissions(self, interactive=True):
         self.permchecker.check_filesystem_permissions()
         self.rootmanager.test_sudo(interactive)
