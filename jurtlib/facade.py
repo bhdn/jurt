@@ -123,6 +123,10 @@ class JurtFacade:
         target = self.get_target(None, None)
         target.invalidate()
 
+    def root_path(self, id, interactive=True):
+        target = self.get_target(None, id, interactive)
+        return target.root_path(id)
+
     def check_permissions(self, interactive=True):
         self._init_targets()
         if not self.targets:

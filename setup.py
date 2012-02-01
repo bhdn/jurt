@@ -47,6 +47,7 @@ setup(name="jurt",
                 "jurt-clean",
                 "jurt-keep",
                 "jurt-invalidate",
+                "jurt-root-path",
         ],
         data_files = [
             ('/etc/jurt/',

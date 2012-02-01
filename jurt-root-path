@@ -1,0 +1,52 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
+#
+# This file is part of Jurt Build Bot.
+#
+# Jurt Build Bot is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# Jurt Build Bot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Jurt Build Bot; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+from jurtlib.command import JurtCommand, CliError
+
+DESCR = """\
+Displays the current path for a given root.
+
+If the root name is ommited, the root marked as "latest" will be used.
+
+Use jurt list-roots to see the root marked as "latest".
+"""
+
+class RootPath(JurtCommand):
+
+    usage = "%prog [TARGET]"
+    descr = DESCR
+
+    def init_parser(self, parser):
+        JurtCommand.init_parser(self, parser)
+        parser.add_option("-b", "--build", default=False,
+                action="store_true",
+                help=("Use the \"latest\" root used for building "
+                      "(defaults on interactive ones)"))
+
+    def run(self):
+        if not self.args:
+            print self.jurt.root_path("latest", not self.opts.build)
+        else:
+            for id in self.args:
+                print self.jurt.root_path(id, not self.opts.build)
+
+RootPath().main()

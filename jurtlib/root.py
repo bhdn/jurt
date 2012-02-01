@@ -747,6 +747,10 @@ class ChrootRootManager(RootManager):
                 self._move_root(root, dest)
                 root.state = Keep
 
+    def root_path(self, id, interactive=True):
+        state, path = self._existing_root(id, interactive=interactive)
+        return path
+
     def test_sudo(self, interactive=True):
         self.su().test_sudo(interactive)
 

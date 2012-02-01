@@ -45,7 +45,8 @@ ALIASES = {
     "b": "build",
     "sh": "shell",
     "lr": "list-roots",
-    "lt": "list-targets" }
+    "lt": "list-targets",
+    "rp": "root-path" }
 
 def main():
     if len(sys.argv) < 2:
