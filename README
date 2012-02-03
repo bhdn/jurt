@@ -4,3 +4,5 @@ jurt
 Run as root jurt-setup -u <YOURUSER>, recreate your session, edit
 /etc/jurt/jurt.conf and setup build targets, then play with jurt-build or
 jurt-shell.
+
+For more information, see jurt(1).
