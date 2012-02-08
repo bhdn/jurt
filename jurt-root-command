@@ -529,4 +529,20 @@ class RootCommand(JurtCommand):
         args.append(self.args[0])
         self._exec(args)
 
+    @_requires_target
+    def cmd_mounttmpfs(self):
+        if len(self.args) != 1:
+            raise CliError, "unexpected number of args"
+        self.target.rootmanager.check_valid_subdir(self.args[0])
+        args = self.target.rootmanager.mount_root_command(self.args[0])
+        self._exec(args)
+
+    @_requires_target
+    def cmd_umounttmpfs(self):
+        if len(self.args) != 1:
+            raise CliError, "unexpected number of args"
+        self.target.rootmanager.check_valid_subdir(self.args[0])
+        args = self.target.rootmanager.umount_root_command(self.args[0])
+        self._exec(args)
+
 RootCommand().main()

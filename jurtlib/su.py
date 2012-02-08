@@ -310,6 +310,12 @@ class JurtRootWrapper(SuWrapper):
         args = [root, file]
         return self._exec_wrapper("rootdecompress", args)
 
+    def mount_tmpfs(self, root):
+        return self._exec_wrapper("mounttmpfs", [root])
+
+    def umount_tmpfs(self, root):
+        return self._exec_wrapper("umounttmpfs", [root])
+
     def post_root_command(self, root=None, arch=None):
         return self._exec_wrapper("postcommand", [], root=root, arch=arch)
 

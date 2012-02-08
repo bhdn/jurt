@@ -46,12 +46,14 @@ class Keep:
     pass
 class Old:
     pass
+class Tmpfs:
+    pass
 
 class DontCare:
     """Whether it must be interactive or not"""
 
 STATE_NAMES = {Temp: "temp", Active: "active", Keep: "keep",
-    Old: "old"}
+    Old: "old", Tmpfs: "tmpfs"}
 STATE_DIRS = dict((v, k) for k, v in STATE_NAMES.iteritems())
 
 class Root(object):
@@ -850,6 +852,7 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
     def _cache_path(self, interactive):
         return self._cache_base_path(interactive) + self.cacheext
 
+
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):
         self._check_new_root_name(name)
@@ -880,6 +883,65 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
     # run as root
     def root_decompress_command(self, root, tarfile):
         return self.decompress_command + [tarfile, "-C", root, "."]
+
+class TmpfsChrootManager(CompressedChrootManager):
+
+    @classmethod
+    def load_config(class_, suwrapper, rootconf, globalconf):
+        names = super(TmpfsChrootManager, class_).load_config(suwrapper,
+                rootconf, globalconf)
+        mountcmd = shlex.split(rootconf.tmpfs_mount_command)
+        umountcmd = shlex.split(rootconf.tmpfs_umount_command)
+        names.update(dict(mountcmd=mountcmd, umountcmd=umountcmd))
+        return names
+
+    def __init__(self, mountcmd, umountcmd, *args, **kwargs):
+        super(TmpfsChrootManager, self).__init__(*args, **kwargs)
+        self.mountcmd = mountcmd
+        self.umountcmd = umountcmd
+
+    def _root_path(self, state, name):
+        "Always returns roots inside the 'tmpfs' state"
+        return self._state_path(self.tempstatedir, name)
+
+    def get_root_by_name(self, *args, **kwargs):
+        raise ChrootError, ("the root type chroot-with-tmpfs never allows "
+                "using an existing root")
+
+    def create_new(self, name, packagemanager, repos, logstore,
+            interactive=False):
+        rootpath = self._root_path(Tmpfs, name)
+        try:
+            exists = os.path.exists(rootpath)
+        except EnvironmentError, e:
+            raise ChrootError, ("failed to verify if directory %s "
+                    "exists: %s" % (rootpath, e))
+        if not exists:
+            self.su().mkdir(rootpath)
+        self.su().mount_tmpfs(rootpath)
+        return super(TmpfsChrootManager, self).create_new(name,
+                packagemanager, repos, logstore, interactive)
+
+    def activate_root(self, root):
+        "Nothing to do"
+
+    def deactivate_root(self, root):
+        self.su().umount_tmpfs(root.path)
+
+    def destroy(self, root, interactive):
+        "Nothing to do"
+
+    # run as root
+    def mount_root_command(self, path):
+        cmd = self.mountcmd[:]
+        cmd.append(path)
+        return cmd
+
+    # run as root
+    def umount_root_command(self, path):
+        cmd = self.umountcmd[:]
+        cmd.append(path)
+        return cmd
 
 class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
 
@@ -928,6 +990,7 @@ root_managers = Registry("root type")
 root_managers.register("chroot", ChrootRootManager)
 root_managers.register("chroot-with-cache", CompressedChrootManager)
 root_managers.register("chroot-with-btrfs", BtrfsChrootManager)
+root_managers.register("chroot-with-tmpfs", TmpfsChrootManager)
 
 def get_root_manager(suwrapper, rootconf, globalconf):
     klass_ = root_managers.get_class(rootconf.root_type)

@@ -55,6 +55,7 @@ active-roots-dir = %(roots-path)s/active/
 temp-roots-dir = %(roots-path)s/temp/
 old-roots-dir = %(roots-path)s/old/
 keep-roots-dir = %(roots-path)s/keep/
+tmpfs-roots-dir = %(roots-path)s/tmpfs/
 builds-dir = %(jurt-base-dir)s/builds/
 spool-dir = %(builds-dir)s/spools/
 logs-dir = %(builds-dir)s/logs/
@@ -190,6 +191,10 @@ btrfs-command = /sbin/btrfs
 btrfs-create-subvol-command = %(btrfs-command)s subvolume create
 btrfs-snapshot-subvol-command = %(btrfs-command)s subvolume snapshot
 btrfs-delete-subvol-command = %(btrfs-command)s subvolume delete
+
+mount-command = /bin/mount
+tmpfs-mount-command = %(mount-command)s -t tmpfs jurt-tmpfs
+tmpfs-umount-command = /bin/umount
 
 #
 # used by jurt-root-command and jurt-setup
