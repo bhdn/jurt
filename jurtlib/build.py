@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -26,13 +26,16 @@ import logging
 import subprocess
 import shlex
 import shutil
-from jurtlib import CommandError, util
+from jurtlib import CommandError, Error, util
 from jurtlib.registry import Registry
 from jurtlib.configutil import parse_bool
 from jurtlib.spool import Spool
 from jurtlib.su import my_username
 
 logger = logging.getLogger("jurt.build")
+
+class BuildError(Error):
+    pass
 
 class BuildResult:
 
@@ -57,6 +60,11 @@ class Builder:
         interactive = parse_bool(buildconf.interactive)
         deliverydir = os.path.expanduser(buildconf.delivery_dir)
         logcompresscmd = shlex.split(buildconf.log_compress_command)
+        try:
+            maxuid = int(buildconf.max_uid)
+        except ValueError:
+            logger.warn(("invalid value for max-uid configuration "
+                        "option: %r"), buildconf.max_uid)
         return dict(rootmanager=rootmanager,
                 packagemanager=packagemanager,
                 repos=repos,
@@ -74,12 +82,13 @@ class Builder:
                 deliverylogext=buildconf.delivery_log_file_ext,
                 logcompresscmd=logcompresscmd,
                 packagesdirname=buildconf.packages_dir_name,
-                latestname=buildconf.latest_home_link_name)
+                latestname=buildconf.latest_home_link_name,
+                maxuid=maxuid)
 
     def __init__(self, rootmanager, packagemanager, repos, spooldir,
             donedir, faildir, builduser, builderhome, useruid, idtimefmt,
             interactive, deliverydir, deliverylogext, logcompresscmd,
-            packagesdirname, latestname, builtdirname="built",
+            packagesdirname, latestname, maxuid, builtdirname="built",
             logsdirname="logs"):
         self.rootmanager = rootmanager
         self.packagemanager = packagemanager
@@ -99,6 +108,7 @@ class Builder:
         self.logcompresscmd = logcompresscmd
         self.packagesdirname = packagesdirname
         self.latestname = latestname
+        self.maxuid = maxuid
 
     def root_name(self, id, sourceid, sourcepath):
         # FIXME should instead get some package information and build a proper
@@ -111,12 +121,30 @@ class Builder:
         spool.create_dirs()
         return spool
 
+    def _find_available_uid(self):
+        import pwd
+        import random
+        try:
+            used = frozenset(u.pw_uid for u in pwd.getpwall())
+        except EnvironmentError, e:
+            raise BuildError, ("failed to enumerate users in the "
+                    "system: %s" % (e))
+        for i in xrange(0, self.maxuid):
+            chosen = random.randint(1000, self.maxuid)
+            if chosen not in used:
+                return chosen
+        raise BuildError, "wow, no available free UIDs!"
+
     # also run as root
     def build_user_info(self):
         if self.interactive:
             return my_username()
         else:
-            return self.builduser, self.useruid
+            if self.useruid == "any-available":
+                uid = self._find_available_uid()
+            else:
+                uid = self.useruid
+            return self.builduser, uid
 
     def build_user_home(self, username):
         from jurtlib.template import template_expand
@@ -138,7 +166,7 @@ class Builder:
                 self.packagemanager.setup_repositories(root, self.repos,
                         logstore, spool)
             self.packagemanager.build_prepare(root, homedir, username, uid)
-            insidepath = root.copy_in(path, homedir, self.useruid)
+            insidepath = root.copy_in(path, homedir, uid)
             srcpath = self.packagemanager.extract_source(insidepath, root,
                     username, homedir, logstore)
             logger.info("installing build dependencies")

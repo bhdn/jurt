@@ -64,9 +64,12 @@ success-dir = %(builds-dir)s/success/
 
 build-user = builder
 builder-home = /home/$username
-builder-uid = 65555
+builder-uid = any-available
 builder-uid-doc = note the builder-uid option is not used when using
-                  jurt-shell or jurt-build --stop
+                  jurt-shell or jurt-build --stop. If the value
+                  is set to any-available, it will use a random UID that is
+                  available (ie. not shown by 'getend passwd')
+max-uid = 2147483647
 chroot-spool-dir = /build-spool/
 built-dir-name = packages
 delivery-dir = ~/jurt/

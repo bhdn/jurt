@@ -901,8 +901,8 @@ class TmpfsChrootManager(CompressedChrootManager):
         self.umountcmd = umountcmd
 
     def _root_path(self, state, name):
-        "Always returns roots inside the 'tmpfs' state"
-        return self._state_path(self.tempstatedir, name)
+        "Always returns roots inside the 'active' state"
+        return self._state_path(self.activestatedir, name)
 
     def get_root_by_name(self, *args, **kwargs):
         raise ChrootError, ("the root type chroot-with-tmpfs never allows "
