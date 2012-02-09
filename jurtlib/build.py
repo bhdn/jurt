@@ -128,7 +128,9 @@ class Builder:
             used = frozenset(u.pw_uid for u in pwd.getpwall())
         except EnvironmentError, e:
             raise BuildError, ("failed to enumerate users in the "
-                    "system: %s" % (e))
+                    "system: %s (you can change the configuration "
+                    "option builder-uid to a fixed value in order "
+                    "to workaround it)"% (e))
         for i in xrange(0, self.maxuid):
             chosen = random.randint(1000, self.maxuid)
             if chosen not in used:
