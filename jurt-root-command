@@ -46,6 +46,9 @@ class RootCommand(JurtCommand):
                 help="Don't execute anything")
         parser.add_option("--root", type="string", default=None,
                 help="execute inside chroot")
+        parser.add_option("--remount", default=False, action="store_true",
+                help=("appends the 'remount command' after any "
+                    "chroot command line"))
         parser.add_option("--arch", type="string", default=None,
                 help="set the arch used by --root")
         parser.add_option("--run-as", type="string", default=None,
@@ -171,6 +174,8 @@ class RootCommand(JurtCommand):
             self.target.rootmanager.check_valid_subdir(self.opts.root)
             allcmd.extend(shlex.split(self.config.root.chroot_command))
             allcmd.append(self.opts.root)
+        if self.opts.remount:
+            allcmd.extend(self.target.rootmanager.remount_wrapper_command())
         if self.opts.run_as:
             allcmd.extend(shlex.split(self.config.root.su_command))
             allcmd.append(self.opts.run_as)

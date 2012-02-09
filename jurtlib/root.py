@@ -353,6 +353,7 @@ class ChrootRootManager(RootManager):
         binds = class_._parse_binds(rootconf.chroot_binds)
         devs = class_._parse_devs(rootconf.chroot_devs)
         maxrootage = class_._parse_max_root_age(rootconf.root_max_age)
+        remountcmd = shlex.split(rootconf.chroot_remount_wrapper_command)
         return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
             spooldir=rootconf.chroot_spool_dir,
             donedir=rootconf.success_dir,
@@ -376,13 +377,15 @@ class ChrootRootManager(RootManager):
             mountpoints=mountpoints,
             binds=binds,
             devs=devs,
-            maxrootage=maxrootage)
+            maxrootage=maxrootage,
+            remountcmd=remountcmd)
 
     def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
             copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
             oldstatedir, keepstatedir, latestsuffix_build,
             latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
-            interactivefile, keepfile, mountpoints, binds, devs, maxrootage):
+            interactivefile, keepfile, mountpoints, binds, devs,
+            maxrootage, remountcmd):
         self.topdir = topdir
         self.suwrapper = suwrapper
         self.spooldir = spooldir
@@ -408,6 +411,7 @@ class ChrootRootManager(RootManager):
         self.binds = binds
         self.devs = devs
         self.maxrootage = maxrootage
+        self.remountcmd = remountcmd
 
     def su(self):
         return self.suwrapper
@@ -787,6 +791,9 @@ class ChrootRootManager(RootManager):
     # run as root
     def devices(self):
         return self.devs[:]
+
+    def remount_wrapper_command(self):
+        return self.remountcmd
 
 class CachedManagerMixIn:
 

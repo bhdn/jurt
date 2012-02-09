@@ -176,7 +176,8 @@ class JurtRootWrapper(SuWrapper):
 
     def _exec_wrapper(self, type, args, root=None, arch=None,
             outputlogger=None, timeout=None, ignoreerrors=False,
-            interactive=False, quiet=False, ignorestderr=False):
+            interactive=False, quiet=False, ignorestderr=False,
+            remount=False):
         assert not (interactive and outputlogger)
 
         basecmd = self.jurtrootcmd[:]
@@ -186,6 +187,8 @@ class JurtRootWrapper(SuWrapper):
             basecmd.extend(("--timeout", str(timeout)))
         if root is not None:
             basecmd.extend(("--root", root))
+        if remount:
+            basecmd.append("--remount")
         if arch is not None:
             basecmd.extend(("--arch", arch))
         if ignoreerrors:
@@ -244,12 +247,13 @@ class JurtRootWrapper(SuWrapper):
                 outputlogger=outputlogger)
 
     def run_as(self, args, user, root=None, arch=None, timeout=None,
-            outputlogger=None, quiet=False, ignorestderr=False):
+            outputlogger=None, quiet=False, ignorestderr=False,
+            remount=False):
         execargs = ["--run-as", user, "--"]
         execargs.extend(args)
         return self._exec_wrapper("runcmd", execargs, root=root, arch=arch,
                 timeout=timeout, outputlogger=outputlogger, quiet=quiet,
-                ignorestderr=ignorestderr)
+                ignorestderr=ignorestderr, remount=False)
 
     def _perm_args(self, uid, gid, mode):
         args = []
@@ -325,7 +329,7 @@ class JurtRootWrapper(SuWrapper):
 
     def interactive_shell(self, username, root=None, arch=None):
         return self._exec_wrapper("interactiveshell", [username],
-                root=root, arch=arch, interactive=True)
+                root=root, arch=arch, interactive=True, remount=True)
 
     def test_sudo(self, interactive=True):
         try:
@@ -358,11 +362,12 @@ class SuChrootWrapper:
                 root=self.root.path, arch=self.root.arch, outputlogger=outputlogger)
 
     def run_as(self, args, user, timeout=None, outputlogger=None,
-            quiet=False, ignorestderr=False):
+            quiet=False, ignorestderr=False, remount=False):
         return self.suwrapper.run_as(args, user=user, root=self.root.path,
                 arch=self.root.arch, timeout=timeout,
                 outputlogger=outputlogger, quiet=quiet,
-                ignorestderr=ignorestderr)
+                ignorestderr=ignorestderr,
+                remount=False)
 
     def post_root_command(self):
         return self.suwrapper.post_root_command(root=self.root.path,

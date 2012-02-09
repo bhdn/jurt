@@ -446,7 +446,11 @@ class RPMBasedPackageManager(PackageManager):
         try:
             try:
                 root.su().run_as(args, user=builduser,
-                        outputlogger=outputlogger, timeout=timeout)
+                        outputlogger=outputlogger, timeout=timeout,
+                        remount=True) # FIXME either remount is at the
+                                      # wrong place or it should have
+                                      # another name that is more
+                                      # meaningful to the caller
             except su.CommandError:
                 logger.error("build failed, see the logs at %s" %
                         (outputlogger.location()))

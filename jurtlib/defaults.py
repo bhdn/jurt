@@ -172,6 +172,11 @@ put-copy-command = cp -a
 pull-glob = SPECS/*.spec SOURCES/*
 chroot-destroy-command = rm --recursive --one-file-system --preserve-root
         --interactive=never
+chroot-remount-wrapper-command-doc = a command that will be appended after
+                                     chroot command line. It is intended
+                                     to remount /proc and /sys. It should
+                                     be available from inside the chroot.
+chroot-remount-wrapper-command =
 chroot-mountpoints-doc = list of virtual filesystems to be mounted when
      entering a chroot, it uses | to separate mountpoints and the fields
      are on the same order of fstab
