@@ -119,11 +119,6 @@ class RootManager(object):
 
     __metaclass__ = abc.ABCMeta
 
-    @classmethod
-    @abc.abstractmethod
-    def load_config(class_, suwrapper, rootconf, globalconf):
-        raise NotImplementedError
-
     @abc.abstractmethod
     def create_new(self, name, packagemanager, repos, logger, interactive):
         raise NotImplementedError
@@ -165,6 +160,10 @@ class RootManager(object):
 
     def invalidate(self, interactive=DontCare):
         raise RootError, "this root type does not support caching"
+
+    @abc.abstractmethod
+    def root_destroy_command(self):
+        raise NotImplementedError
 
     @abc.abstractmethod
     def allows_interactive_shell(self):
@@ -331,87 +330,34 @@ class ChrootRootManager(RootManager):
         seconds = days * 24 * 60 * 60
         return seconds
 
-    @classmethod
-    def load_config(class_, suwrapper, rootconf, globalconf):
-        copyfiles = shlex.split(rootconf.root_copy_files)
-        postcmd = rootconf.root_post_command.strip()
-        arch = rootconf.arch
-        archmap = class_._parse_arch_map(rootconf.arch_map)
-        allowshell = parse_bool(rootconf.allow_interactive_shell)
-        keepstatedir = rootconf.keep_roots_dir
-        oldstatedir = rootconf.old_roots_dir
-        tempstatedir = rootconf.temp_roots_dir
-        activestatedir = rootconf.active_roots_dir
-        latestsuffix_build = rootconf.latest_build_suffix
-        latestsuffix_interactive = rootconf.latest_interactive_suffix
-        putcopycmd = shlex.split(rootconf.put_copy_command)
-        destroycmd = shlex.split(rootconf.chroot_destroy_command)
-        targetfile = rootconf.chroot_target_file.strip()
-        interactivefile = rootconf.chroot_interactive_file.strip()
-        keepfile = rootconf.chroot_keep_file.strip()
-        mountpoints = class_._parse_mount_points(rootconf.chroot_mountpoints)
-        binds = class_._parse_binds(rootconf.chroot_binds)
-        devs = class_._parse_devs(rootconf.chroot_devs)
-        maxrootage = class_._parse_max_root_age(rootconf.root_max_age)
-        remountcmd = shlex.split(rootconf.chroot_remount_wrapper_command)
-        return dict(topdir=rootconf.roots_path, suwrapper=suwrapper,
-            spooldir=rootconf.chroot_spool_dir,
-            donedir=rootconf.success_dir,
-            faildir=rootconf.failure_dir,
-            copyfiles=copyfiles,
-            postcmd=postcmd,
-            arch=arch,
-            archmap=archmap,
-            allowshell=allowshell,
-            activestatedir=activestatedir,
-            tempstatedir=tempstatedir,
-            oldstatedir=oldstatedir,
-            keepstatedir=keepstatedir,
-            latestsuffix_build=latestsuffix_build,
-            latestsuffix_interactive=latestsuffix_interactive,
-            putcopycmd=putcopycmd,
-            destroycmd=destroycmd,
-            targetfile=targetfile,
-            interactivefile=interactivefile,
-            keepfile=keepfile,
-            mountpoints=mountpoints,
-            binds=binds,
-            devs=devs,
-            maxrootage=maxrootage,
-            remountcmd=remountcmd)
-
-    def __init__(self, topdir, arch, archmap, spooldir, donedir, faildir, suwrapper,
-            copyfiles, postcmd, allowshell, activestatedir, tempstatedir,
-            oldstatedir, keepstatedir, latestsuffix_build,
-            latestsuffix_interactive, putcopycmd, destroycmd, targetfile,
-            interactivefile, keepfile, mountpoints, binds, devs,
-            maxrootage, remountcmd):
-        self.topdir = topdir
+    def __init__(self, suwrapper, rootconf, globalconf):
+        super(ChrootRootManager, self).__init__()
         self.suwrapper = suwrapper
-        self.spooldir = spooldir
-        self.donedir = donedir
-        self.faildir = faildir
-        self.copyfiles = copyfiles
-        self.postcmd = postcmd
-        self.arch = arch
-        self.archmap = archmap
-        self.allowshell = allowshell
-        self.activestatedir = activestatedir
-        self.keepstatedir = keepstatedir
-        self.oldstatedir = oldstatedir
-        self.tempstatedir = tempstatedir
-        self.latestsuffix_build = latestsuffix_build
-        self.latestsuffix_interactive = latestsuffix_interactive
-        self.putcopycmd = putcopycmd
-        self.destroycmd = destroycmd
-        self.targetfile = targetfile
-        self.interactivefile = interactivefile
-        self.keepfile = keepfile
-        self.mountpoints = mountpoints
-        self.binds = binds
-        self.devs = devs
-        self.maxrootage = maxrootage
-        self.remountcmd = remountcmd
+        self.topdir = rootconf.roots_path
+        self.spooldir = rootconf.chroot_spool_dir
+        self.donedir = rootconf.success_dir
+        self.faildir = rootconf.failure_dir
+        self.copyfiles = shlex.split(rootconf.root_copy_files)
+        self.postcmd = rootconf.root_post_command.strip()
+        self.arch = rootconf.arch
+        self.archmap = self._parse_arch_map(rootconf.arch_map)
+        self.allowshell = parse_bool(rootconf.allow_interactive_shell)
+        self.keepstatedir = rootconf.keep_roots_dir
+        self.oldstatedir = rootconf.old_roots_dir
+        self.tempstatedir = rootconf.temp_roots_dir
+        self.activestatedir = rootconf.active_roots_dir
+        self.latestsuffix_build = rootconf.latest_build_suffix
+        self.latestsuffix_interactive = rootconf.latest_interactive_suffix
+        self.putcopycmd = shlex.split(rootconf.put_copy_command)
+        self.destroycmd = shlex.split(rootconf.chroot_destroy_command)
+        self.targetfile = rootconf.chroot_target_file.strip()
+        self.interactivefile = rootconf.chroot_interactive_file.strip()
+        self.keepfile = rootconf.chroot_keep_file.strip()
+        self.mountpoints = self._parse_mount_points(rootconf.chroot_mountpoints)
+        self.binds = self._parse_binds(rootconf.chroot_binds)
+        self.devs = self._parse_devs(rootconf.chroot_devs)
+        self.maxrootage = self._parse_max_root_age(rootconf.root_max_age)
+        self.remountcmd = shlex.split(rootconf.chroot_remount_wrapper_command)
 
     def su(self):
         return self.suwrapper
@@ -782,6 +728,10 @@ class ChrootRootManager(RootManager):
         return self.allowshell
 
     # run as root
+    def root_destroy_command(self):
+        return self.destroycmd[:]
+
+    # run as root
     def mount_points(self):
         for mountinfo in self.mountpoints:
             yield mountinfo
@@ -820,26 +770,14 @@ class CachedManagerMixIn:
 
 class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
 
-    @classmethod
-    def load_config(class_, suwrapper, rootconf, globalconf):
-        names = ChrootRootManager.load_config(suwrapper, rootconf,
+    def __init__(self, suwrapper, rootconf, globalconf):
+        super(CompressedChrootManager, self).__init__(suwrapper, rootconf,
                 globalconf)
-        names.update(
-                dict(compress_command=shlex.split(rootconf.chroot_compress_command),
-                    decompress_command=shlex.split(rootconf.chroot_decompress_command),
-                    targetname=rootconf.target_name,
-                    cachedir=rootconf.chroot_cache_dir,
-                    cacheext=rootconf.chroot_cache_ext))
-        return names
-
-    def __init__(self, compress_command, decompress_command, cachedir,
-            cacheext, targetname, *args, **kwargs):
-        super(CompressedChrootManager, self).__init__(*args, **kwargs)
-        self.compress_command = compress_command
-        self.decompress_command = decompress_command
-        self.cachedir = cachedir
-        self.cacheext = cacheext
-        self.targetname = targetname
+        self.compress_command = shlex.split(rootconf.chroot_compress_command)
+        self.decompress_command = shlex.split(rootconf.chroot_decompress_command)
+        self.targetname = rootconf.target_name
+        self.cachedir = rootconf.chroot_cache_dir
+        self.cacheext = rootconf.chroot_cache_ext
 
     def _run(self, args, stdout=None, stdin=None):
         if stdout is None:
@@ -893,19 +831,11 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
 
 class TmpfsChrootManager(CompressedChrootManager):
 
-    @classmethod
-    def load_config(class_, suwrapper, rootconf, globalconf):
-        names = super(TmpfsChrootManager, class_).load_config(suwrapper,
-                rootconf, globalconf)
-        mountcmd = shlex.split(rootconf.tmpfs_mount_command)
-        umountcmd = shlex.split(rootconf.tmpfs_umount_command)
-        names.update(dict(mountcmd=mountcmd, umountcmd=umountcmd))
-        return names
-
-    def __init__(self, mountcmd, umountcmd, *args, **kwargs):
-        super(TmpfsChrootManager, self).__init__(*args, **kwargs)
-        self.mountcmd = mountcmd
-        self.umountcmd = umountcmd
+    def __init__(self, suwrapper, rootconf, globalconf):
+        super(TmpfsChrootManager, self).__init__(suwrapper, rootconf,
+                globalconf)
+        self.mountcmd = shlex.split(rootconf.tmpfs_mount_command)
+        self.umountcmd = shlex.split(rootconf.tmpfs_umount_command)
 
     def _root_path(self, state, name):
         "Always returns roots inside the 'active' state"
@@ -952,29 +882,13 @@ class TmpfsChrootManager(CompressedChrootManager):
 
 class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
 
-    @classmethod
-    def load_config(class_, suwrapper, rootconf, globalconf):
-        names = ChrootRootManager.load_config(suwrapper, rootconf,
+    def __init__(self, suwrapper, rootconf, globalconf):
+        super(BtrfsChrootManager, self).__init__(suwrapper, rootconf,
                 globalconf)
-        newsvcmd = shlex.split(rootconf.btrfs_create_subvol_command)
-        snapsvcmd = shlex.split(rootconf.btrfs_snapshot_subvol_command)
-        delsvcmd = shlex.split(rootconf.btrfs_delete_subvol_command)
-        targetname = rootconf.target_name
-        names.update(
-                dict(newsvcmd=newsvcmd,
-                    snapsvcmd=snapsvcmd,
-                    delsvcmd=delsvcmd,
-                    targetname=targetname))
-        return names
-
-    def __init__(self, newsvcmd, snapsvcmd, delsvcmd, targetname, *args,
-            **kwargs):
-        super(BtrfsChrootManager, self).__init__(*args, **kwargs)
-        self.newsvcmd = newsvcmd
-        self.snapsvcmd = snapsvcmd
-        self.delsvcmd = delsvcmd
-        self.targetname = targetname
-        self.destroycmd = delsvcmd
+        self.newsvcmd = shlex.split(rootconf.btrfs_create_subvol_command)
+        self.snapsvcmd = shlex.split(rootconf.btrfs_snapshot_subvol_command)
+        self.delsvcmd = shlex.split(rootconf.btrfs_delete_subvol_command)
+        self.targetname = rootconf.target_name
 
     def create_new(self, name, packagemanager, repos, logstore,
             interactive=False):
@@ -993,6 +907,9 @@ class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
                     interactive=interactive)
         return root
 
+    def root_destroy_command(self):
+        return self.delsvcmd[:]
+
 root_managers = Registry("root type")
 root_managers.register("chroot", ChrootRootManager)
 root_managers.register("chroot-with-cache", CompressedChrootManager)
@@ -1000,6 +917,6 @@ root_managers.register("chroot-with-btrfs", BtrfsChrootManager)
 root_managers.register("chroot-with-tmpfs", TmpfsChrootManager)
 
 def get_root_manager(suwrapper, rootconf, globalconf):
-    klass_ = root_managers.get_class(rootconf.root_type)
-    instance = klass_(**klass_.load_config(suwrapper, rootconf, globalconf))
+    instance = root_managers.get_instance(rootconf.root_type, suwrapper,
+            rootconf, globalconf)
     return instance

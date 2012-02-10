@@ -24,6 +24,7 @@ import os
 import select
 import subprocess
 import logging
+import shlex
 from jurtlib import Error, CommandError
 from jurtlib.registry import Registry
 from cStringIO import StringIO
@@ -70,24 +71,12 @@ class SuWrapper:
 
 class JurtRootWrapper(SuWrapper):
 
-    @classmethod
-    def load_config(class_, targetname, suconf, globalconf):
-        import shlex
-        sucmd = shlex.split(suconf.sudo_command)
-        jurtrootcmd = shlex.split(suconf.jurt_root_command_command)
-        cmdpolltime = float(suconf.command_poll_time)
-        return dict(sucmd=sucmd, jurtrootcmd=jurtrootcmd,
-                targetname=targetname,
-                builduser=suconf.build_user,
-                cmdpolltime=cmdpolltime)
-
-    def __init__(self, sucmd, builduser, jurtrootcmd, targetname,
-            cmdpolltime):
-        self.sucmd = sucmd
-        self.jurtrootcmd = jurtrootcmd
+    def __init__(self, targetname, suconf, globalconf):
         self.targetname = targetname
-        self.builduser = builduser
-        self.cmdpolltime = cmdpolltime
+        self.sucmd = shlex.split(suconf.sudo_command)
+        self.jurtrootcmd = shlex.split(suconf.jurt_root_command_command)
+        self.cmdpolltime = float(suconf.command_poll_time)
+        self.builduser = suconf.build_user
         self.agentrunning = False
         self.agentproc = None
         self.agentcmdline = None
@@ -388,5 +377,6 @@ su_wrappers = Registry("sudo wrapper")
 su_wrappers.register("jurt-root-wrapper", JurtRootWrapper)
 
 def get_su_wrapper(targetname, suconf, globalconf):
-    klass = su_wrappers.get_class(suconf.su_type)
-    return klass(**klass.load_config(targetname, suconf, globalconf))
+    instance = su_wrappers.get_instance(suconf.su_type, targetname, suconf,
+            globalconf)
+    return instance

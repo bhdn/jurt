@@ -42,11 +42,6 @@ class CommandValidationError(PackageManagerError):
 class PackageManager(object):
     __metaclass__ = abc.ABCMeta
 
-    @classmethod
-    @abc.abstractmethod
-    def load_config(class_, pmconf, globalconf):
-        return dict()
-
     @abc.abstractmethod
     def create_root(self, root):
         raise NotImplementedError
@@ -179,87 +174,35 @@ def parse_replace_expr(rawvalue, field):
 
 class RPMBasedPackageManager(PackageManager):
 
-    @classmethod
-    def load_config(class_, pmconf, globalconf):
-        basepkgs = pmconf.base_packages.split()
-        interactivepkgs = pmconf.interactive_packages.split()
-        rpmunpackcmd = shlex.split(pmconf.rpm_install_source_command)
-        rpmbuildcmd = shlex.split(pmconf.rpm_build_source_command)
-        rpmpackagercmd = shlex.split(pmconf.rpm_get_packager_command)
-        collectglob = shlex.split(pmconf.rpm_collect_glob)
-        genhdlistcmd = shlex.split(pmconf.genhdlist_command)
-        rpmarchcmd = shlex.split(pmconf.rpm_get_arch_command)
-        rpmtopdir = pmconf.rpm_topdir.strip()
-        rpmsubdirs = shlex.split(pmconf.rpm_topdir_subdirs)
-        rpmmacros = pmconf.rpm_macros_file.strip()
-        defpackager = pmconf.rpm_packager_default.strip()
-        packager = pmconf.rpm_packager.strip()
-        rpmlistpkgs = shlex.split(pmconf.rpm_list_packages_command)
-        allowedrpmcmds = shlex.split(pmconf.interactive_allowed_rpm_commands)
-        extramacros = split_extra_macros(pmconf.rpm_build_macros,
+    def __init__(self, pmconf, globalconf):
+        self.basepkgs = pmconf.base_packages.split()
+        self.interactivepkgs = pmconf.interactive_packages.split()
+        self.rpmunpackcmd = shlex.split(pmconf.rpm_install_source_command)
+        self.rpmbuildcmd = shlex.split(pmconf.rpm_build_source_command)
+        self.rpmpackagercmd = shlex.split(pmconf.rpm_get_packager_command)
+        self.collectglob = shlex.split(pmconf.rpm_collect_glob)
+        self.genhdlistcmd = shlex.split(pmconf.genhdlist_command)
+        self.rpmarchcmd = shlex.split(pmconf.rpm_get_arch_command)
+        self.rpmtopdir = pmconf.rpm_topdir.strip()
+        self.rpmsubdirs = shlex.split(pmconf.rpm_topdir_subdirs)
+        self.rpmmacros = pmconf.rpm_macros_file.strip()
+        self.defpackager = pmconf.rpm_packager_default.strip()
+        self.packager = pmconf.rpm_packager.strip()
+        if self.packager == "undefined":
+            self.packager = None
+        self.rpmlistpkgs = shlex.split(pmconf.rpm_list_packages_command)
+        self.allowedrpmcmds = shlex.split(pmconf.interactive_allowed_rpm_commands)
+        self.extramacros = split_extra_macros(pmconf.rpm_build_macros,
                 "rpm-build-macros")
-        if packager == "undefined":
-            packager = None
-        filestopull = shlex.split(pmconf.pull_glob)
-        rpmbuildreqspec = shlex.split(pmconf.rpm_buildreqs_from_spec_command)
-        rpmbuildreqsrpm = shlex.split(pmconf.rpm_buildreqs_from_srpm_command)
-        rpmrecreatesrpm = shlex.split(pmconf.rpm_recreate_srpm_command)
-        skipdepsex = compile_conf_re(pmconf.rpm_skip_build_deps,
+        self.filestopull = shlex.split(pmconf.pull_glob)
+        self.rpmbuildreqspec = shlex.split(pmconf.rpm_buildreqs_from_spec_command)
+        self.rpmbuildreqsrpm = shlex.split(pmconf.rpm_buildreqs_from_srpm_command)
+        self.rpmrecreatesrpm = shlex.split(pmconf.rpm_recreate_srpm_command)
+        self.skipdepsex = compile_conf_re(pmconf.rpm_skip_build_deps,
                 "rpm-skip-build-deps")
-        replacedepsex = parse_replace_expr(pmconf.rpm_replace_build_deps,
+        self.replacedepsex = parse_replace_expr(pmconf.rpm_replace_build_deps,
                 "rpm-replace-build-deps")
-        return dict(basepkgs=basepkgs,
-                interactivepkgs=interactivepkgs,
-                rootsdir=pmconf.roots_path,
-                rpmunpackcmd=rpmunpackcmd,
-                rpmbuildcmd=rpmbuildcmd,
-                collectglob=collectglob,
-                genhdlistcmd=genhdlistcmd,
-                rpmarchcmd=rpmarchcmd,
-                rpmpackagercmd=rpmpackagercmd,
-                defpackager=defpackager,
-                packager=packager,
-                rpmtopdir=rpmtopdir,
-                rpmsubdirs=rpmsubdirs,
-                rpmmacros=rpmmacros,
-                rpmlistpkgs=rpmlistpkgs,
-                extramacros=extramacros,
-                filestopull=filestopull,
-                allowedrpmcmds=allowedrpmcmds,
-                rpmbuildreqspec=rpmbuildreqspec,
-                rpmbuildreqsrpm=rpmbuildreqsrpm,
-                rpmrecreatesrpm=rpmrecreatesrpm,
-                skipdepsex=skipdepsex,
-                replacedepsex=replacedepsex)
-
-    def __init__(self, rootsdir, rpmunpackcmd, rpmbuildcmd, collectglob,
-            rpmarchcmd, rpmpackagercmd, basepkgs, interactivepkgs,
-            defpackager, packager, rpmtopdir, rpmsubdirs, rpmmacros,
-            rpmlistpkgs, extramacros, filestopull, allowedrpmcmds,
-            rpmbuildreqspec, rpmbuildreqsrpm, rpmrecreatesrpm, skipdepsex,
-            replacedepsex):
-        self.rootsdir = rootsdir
-        self.basepkgs = basepkgs
-        self.interactivepkgs = interactivepkgs
-        self.rpmunpackcmd = rpmunpackcmd
-        self.rpmbuildcmd = rpmbuildcmd
-        self.collectglob = collectglob
-        self.rpmarchcmd = rpmarchcmd
-        self.rpmpackagercmd = rpmpackagercmd
-        self.defpackager = defpackager
-        self.packager = packager
-        self.rpmtopdir = rpmtopdir
-        self.rpmsubdirs = rpmsubdirs
-        self.rpmmacros = rpmmacros
-        self.rpmlistpkgs = rpmlistpkgs
-        self.extramacros = extramacros
-        self.filestopull = filestopull
-        self.allowedrpmcmds = allowedrpmcmds
-        self.rpmbuildreqspec = rpmbuildreqspec
-        self.rpmbuildreqsrpm = rpmbuildreqsrpm
-        self.rpmrecreatesrpm = rpmrecreatesrpm
-        self.skipdepsex = skipdepsex
-        self.replacedepsex = replacedepsex
+        self.rootsdir = pmconf.roots_path
 
     def _expand_home(self, str, homedir):
         return str.replace("~", homedir)
@@ -470,46 +413,19 @@ class RPMBasedPackageManager(PackageManager):
 
 class URPMIPackageManager(RPMBasedPackageManager):
 
-    @classmethod
-    def load_config(class_, pmconf, globalconf):
-        names = RPMBasedPackageManager.load_config(pmconf,
-                globalconf)
-        urpmiopts = shlex.split(pmconf.urpmi_extra_options)
-        urpmivalidopts = pmconf.urpmi_valid_options.split()
-        addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
-        updatecmd = shlex.split(pmconf.urpmi_update_command)
-        urpmicmd = shlex.split(pmconf.urpmi_command)
-        allowedpmcmds = shlex.split(pmconf.interactive_allowed_urpmi_commands)
-        urpmifatalexpr = compile_conf_re(pmconf.urpmi_fatal_output,
+    def __init__(self, pmconf, globalconf):
+        super(URPMIPackageManager, self).__init__(pmconf, globalconf)
+        self.urpmiopts = shlex.split(pmconf.urpmi_extra_options)
+        self.urpmivalidopts = pmconf.urpmi_valid_options.split()
+        self.addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
+        self.updatecmd = shlex.split(pmconf.urpmi_update_command)
+        self.urpmicmd = shlex.split(pmconf.urpmi_command)
+        self.allowedpmcmds = shlex.split(pmconf.interactive_allowed_urpmi_commands)
+        self.urpmifatalexpr = compile_conf_re(pmconf.urpmi_fatal_output,
                                          "urpmi-fatal-output")
-        ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
+        self.ignoremediasexpr = compile_conf_re(pmconf.urpmi_ignore_system_medias,
                                          "urpmi-ignore-system-medias")
-        listmediascmd = shlex.split(pmconf.urpmi_list_medias_command)
-        names.update(dict(urpmiopts=urpmiopts,
-            urpmivalidopts=urpmivalidopts,
-            addmediacmd=addmediacmd,
-            updatecmd=updatecmd,
-            urpmicmd=urpmicmd,
-            allowedpmcmds=allowedpmcmds,
-            urpmifatalexpr=urpmifatalexpr,
-            ignoremediasexpr=ignoremediasexpr,
-            listmediascmd=listmediascmd))
-        return names
-
-    def __init__(self, urpmicmd, genhdlistcmd, addmediacmd, updatecmd,
-            urpmiopts, urpmivalidopts, allowedpmcmds, urpmifatalexpr,
-            ignoremediasexpr, listmediascmd, *args, **kwargs):
-        super(URPMIPackageManager, self).__init__(*args, **kwargs)
-        self.urpmiopts = urpmiopts
-        self.urpmivalidopts = urpmivalidopts
-        self.urpmicmd = urpmicmd
-        self.addmediacmd = addmediacmd
-        self.updatecmd = updatecmd
-        self.genhdlistcmd = genhdlistcmd
-        self.allowedpmcmds = allowedpmcmds
-        self.urpmifatalexpr = urpmifatalexpr
-        self.ignoremediasexpr = ignoremediasexpr
-        self.listmediascmd = listmediascmd
+        self.listmediascmd = shlex.split(pmconf.urpmi_list_medias_command)
 
     def repos_from_config(self, configstr):
         return URPMIRepos(configstr, self.listmediascmd,
@@ -666,41 +582,16 @@ class SmartRepos(Repos):
 
 class SmartPackageManager(RPMBasedPackageManager):
 
-    @classmethod
-    def load_config(class_, pmconf, globalconf):
-        names = RPMBasedPackageManager.load_config(pmconf,
-                globalconf)
-        smartcmd = shlex.split(pmconf.smart_command)
-        addchannelcmd = shlex.split(pmconf.smart_channel_add_command)
-        installcmd = shlex.split(pmconf.smart_install_command)
-        updatecmd = shlex.split(pmconf.smart_update_command)
-        datadir = pmconf.smart_datadir.strip()
-        allowedsmartcmds = shlex.split(pmconf.interactive_allowed_smart_commands)
-        spoolchannel = shlex.split(pmconf.smart_spool_channel)
-        spoolupdatecmd = shlex.split(pmconf.smart_spool_update_command)
-        names.update(dict(smartcmd=smartcmd,
-            addchannelcmd=addchannelcmd,
-            installcmd=installcmd,
-            updatecmd=updatecmd,
-            datadir=datadir,
-            allowedsmartcmds=allowedsmartcmds,
-            spoolchannel=spoolchannel,
-            spoolupdatecmd=spoolupdatecmd))
-        return names
-
-    def __init__(self, smartcmd, addchannelcmd, installcmd, updatecmd,
-            datadir, genhdlistcmd, allowedsmartcmds, spoolchannel,
-            spoolupdatecmd, *args, **kwargs):
-        super(SmartPackageManager, self).__init__(*args, **kwargs)
-        self.smartcmd = smartcmd
-        self.addchannelcmd = addchannelcmd
-        self.installcmd = installcmd
-        self.updatecmd = updatecmd
-        self.datadir = datadir
-        self.genhdlistcmd = genhdlistcmd
-        self.allowedsmartcmds = allowedsmartcmds
-        self.spoolchannel = spoolchannel
-        self.spoolupdatecmd = spoolupdatecmd
+    def __init__(self, pmconf, globalconf):
+        super(SmartPackageManager, self).__init__(pmconf, globalconf)
+        self.smartcmd = shlex.split(pmconf.smart_command)
+        self.addchannelcmd = shlex.split(pmconf.smart_channel_add_command)
+        self.installcmd = shlex.split(pmconf.smart_install_command)
+        self.updatecmd = shlex.split(pmconf.smart_update_command)
+        self.datadir = pmconf.smart_datadir.strip()
+        self.allowedsmartcmds = shlex.split(pmconf.interactive_allowed_smart_commands)
+        self.spoolchannel = shlex.split(pmconf.smart_spool_channel)
+        self.spoolupdatecmd = shlex.split(pmconf.smart_spool_update_command)
 
     def repos_from_config(self, configstr):
         return SmartRepos(configstr)
@@ -823,6 +714,6 @@ package_managers.register("urpmi", URPMIPackageManager)
 package_managers.register("smart+urpmi", SmartPackageManager)
 
 def get_package_manager(pmconf, globalconf):
-    klass = package_managers.get_class(pmconf.pm_type)
-    instance = klass(**klass.load_config(pmconf, globalconf))
+    instance = package_managers.get_instance(pmconf.pm_type, pmconf,
+            globalconf)
     return instance

@@ -530,7 +530,7 @@ class RootCommand(JurtCommand):
             raise CliError, "unexpected number of args"
         self.target.rootmanager.check_valid_subdir(self.args[0])
         # WARN: destroycmd is a specific of Chroot:
-        args = self.target.rootmanager.destroycmd[:]
+        args = self.target.rootmanager.root_destroy_command()
         args.append(self.args[0])
         self._exec(args)
 

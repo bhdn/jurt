@@ -28,13 +28,8 @@ logger = logging.getLogger("jurt.logger")
 
 class LoggerFactory:
 
-    @classmethod
-    def load_config(class_, loggerconf, globalconf):
-        logbasedir = os.path.expanduser(loggerconf.logs_dir)
-        return dict(logbasedir=logbasedir)
-
-    def __init__(self, logbasedir):
-        self.logbasedir = logbasedir
+    def __init__(self, loggerconf, globalconf):
+        self.logbasedir = os.path.expanduser(loggerconf.logs_dir)
 
     def get_logger(self, id, outputfile=None):
         return Logger(id, self.logbasedir, outputfile=outputfile)
@@ -106,5 +101,6 @@ loggers = Registry("logger type")
 loggers.register("default", LoggerFactory)
 
 def get_logger_factory(loggerconf, globalconf):
-    klass = loggers.get_class(loggerconf.logger_type)
-    return klass(**klass.load_config(loggerconf, globalconf))
+    instance = loggers.get_instance(loggerconf.logger_type, loggerconf,
+            globalconf)
+    return instance

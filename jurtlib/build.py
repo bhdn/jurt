@@ -53,62 +53,32 @@ def create_dirs(path):
 
 class Builder:
 
-    @classmethod
-    def load_config(class_, rootmanager, packagemanager, buildconf,
-            globalconf):
-        repos = packagemanager.repos_from_config(buildconf.repos)
-        interactive = parse_bool(buildconf.interactive)
-        deliverydir = os.path.expanduser(buildconf.delivery_dir)
-        logcompresscmd = shlex.split(buildconf.log_compress_command)
+    def __init__(self, rootmanager, packagemanager, buildconf, globalconf):
+        self.rootmanager = rootmanager
+        self.packagemanager = packagemanager
+        self.repos = packagemanager.repos_from_config(buildconf.repos)
+        self.interactive = parse_bool(buildconf.interactive)
+        self.deliverydir = os.path.expanduser(buildconf.delivery_dir)
+        self.logcompresscmd = shlex.split(buildconf.log_compress_command)
+        self.spooldir = buildconf.spool_dir
+        self.donedir = buildconf.success_dir
+        self.faildir = buildconf.failure_dir
+        self.builtdirname = buildconf.built_dir_name
+        self.logsdirname = buildconf.logs_dir_name
+        self.builduser = buildconf.build_user
+        self.builderhome = buildconf.builder_home
+        self.useruid = buildconf.builder_uid
+        self.idtimefmt = buildconf.buildid_timefmt
+        self.deliverylogext = buildconf.delivery_log_file_ext
+        self.packagesdirname = buildconf.packages_dir_name
+        self.latestname = buildconf.latest_home_link_name
+        self.logsdirname = "logs"
+        self.builtdirname = "built"
         try:
-            maxuid = int(buildconf.max_uid)
+            self.maxuid = int(buildconf.max_uid)
         except ValueError:
             logger.warn(("invalid value for max-uid configuration "
                         "option: %r"), buildconf.max_uid)
-        return dict(rootmanager=rootmanager,
-                packagemanager=packagemanager,
-                repos=repos,
-                spooldir=buildconf.spool_dir,
-                donedir=buildconf.success_dir,
-                faildir=buildconf.failure_dir,
-                builtdirname=buildconf.built_dir_name,
-                logsdirname=buildconf.logs_dir_name,
-                builduser=buildconf.build_user,
-                builderhome=buildconf.builder_home,
-                useruid=buildconf.builder_uid,
-                idtimefmt=buildconf.buildid_timefmt,
-                interactive=interactive,
-                deliverydir=deliverydir,
-                deliverylogext=buildconf.delivery_log_file_ext,
-                logcompresscmd=logcompresscmd,
-                packagesdirname=buildconf.packages_dir_name,
-                latestname=buildconf.latest_home_link_name,
-                maxuid=maxuid)
-
-    def __init__(self, rootmanager, packagemanager, repos, spooldir,
-            donedir, faildir, builduser, builderhome, useruid, idtimefmt,
-            interactive, deliverydir, deliverylogext, logcompresscmd,
-            packagesdirname, latestname, maxuid, builtdirname="built",
-            logsdirname="logs"):
-        self.rootmanager = rootmanager
-        self.packagemanager = packagemanager
-        self.repos = repos
-        self.spooldir = spooldir
-        self.donedir = donedir
-        self.faildir = faildir
-        self.builtdirname = builtdirname
-        self.logsdirname = logsdirname
-        self.builduser = builduser
-        self.useruid = useruid
-        self.builderhome = builderhome
-        self.idtimefmt = idtimefmt
-        self.interactive = interactive
-        self.deliverydir = deliverydir
-        self.deliverylogext = deliverylogext
-        self.logcompresscmd = logcompresscmd
-        self.packagesdirname = packagesdirname
-        self.latestname = latestname
-        self.maxuid = maxuid
 
     def root_name(self, id, sourceid, sourcepath):
         # FIXME should instead get some package information and build a proper
@@ -321,7 +291,5 @@ build_types = Registry("builder type")
 build_types.register("default", Builder)
 
 def get_builder(rootmanager, packagemanager, buildconf, globalconf):
-    klass_ = build_types.get_class(buildconf.build_type)
-    instance = klass_(**klass_.load_config(rootmanager, packagemanager,
-        buildconf, globalconf))
-    return instance
+    return build_types.get_instance(buildconf.build_type, rootmanager,
+            packagemanager, buildconf, globalconf)
