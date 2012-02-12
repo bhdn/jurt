@@ -99,21 +99,6 @@ urpmi-extra-options = --no-suggests --excludedocs
 urpmi-update-command = /usr/sbin/urpmi.update -a
 urpmi-list-medias-command = /usr/bin/env -i /usr/bin/urpmq --dump-config
 urpmi-ignore-system-medias = (testing|backports|debug|SRPMS|file://|cdrom://)
-urpmi-valid-options = root= auto no-suggests excludedocs auto-select proxy=
-                      use-distrib= urpmi-root= distrib= buildrequires
-                      searchmedia= sortmedia= update synthesis= auto-update
-                      no-md5sum force-key no-uninstall no-install keep
-                      split-level= split-length= clean quiet debug
-                      debug-librpm allow-suggests justdb replacepkgs
-                      allow-nodeps allow-force parallel= download-all=
-                      downloader= curl-options= rsync-options=
-                      wget-options= limit-rate= resume retry= proxy-user=
-                      verify-rpm no-verify-rpm excludepath= ignorearch
-                      ignoresize repackage noscripts nolock P y q
-                      tune-rpm= nofdigests raw all-media wget curl
-                      prozilla aria2 metalink xml-info= probe-synthesis
-                      probe-rpms no-probe interactive virtual nopubkey
-urpmi-valid-options-doc = it uses the getopt syntax
 genhdlist-command = /usr/bin/genhdlist2 --allow-empty-media
 urpmi-fatal-output = (No space left on device|A requested package cannot be installed|Some requested packages cannot be installed)
 

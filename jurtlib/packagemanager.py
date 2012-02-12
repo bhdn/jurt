@@ -416,7 +416,6 @@ class URPMIPackageManager(RPMBasedPackageManager):
     def __init__(self, pmconf, globalconf):
         super(URPMIPackageManager, self).__init__(pmconf, globalconf)
         self.urpmiopts = shlex.split(pmconf.urpmi_extra_options)
-        self.urpmivalidopts = pmconf.urpmi_valid_options.split()
         self.addmediacmd = shlex.split(pmconf.urpmiaddmedia_command)
         self.updatecmd = shlex.split(pmconf.urpmi_update_command)
         self.urpmicmd = shlex.split(pmconf.urpmi_command)
@@ -544,18 +543,18 @@ class URPMIPackageManager(RPMBasedPackageManager):
 
     # executed as root:
     def validate_cmd_args(self, pmtype, args):
-        import getopt
         if pmtype == "urpmi" and not "--auto" in args:
             raise CommandValidationError, "--auto is missing in urpmi "\
                     "command line"
-        opts, args = getopt.gnu_getopt(args, "", self.urpmivalidopts)
         absrootsdir = os.path.abspath(self.rootsdir) + "/"
-        for opt, value in opts:
+        for i, opt in enumerate(args):
             if opt == "--root" or opt == "--urpmi-root":
-                absroot = os.path.abspath(value) + "/"
-                if not absroot.startswith(absrootsdir):
-                    raise CommandValidationError, "%s should be "\
-                            "based on %s" % (opt, absrootsdir)
+                if i < len(args) - 1:
+                    value = args[i + 1]
+                    absroot = os.path.abspath(value) + "/"
+                    if not absroot.startswith(absrootsdir):
+                        raise CommandValidationError, "%s should be "\
+                                "based on %s" % (opt, absrootsdir)
 
     # run as root
     def cmd_args(self, pmtype, args):
