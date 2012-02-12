@@ -25,7 +25,7 @@ import os
 
 def usage():
     print """\
-jurt - builds packages in a clean root
+jurt -- builds packages in a clean root
 
 Before using it, please run jurt-setup.
 
