@@ -237,7 +237,7 @@ class Builder:
                     shutil.copy(path, destpath)
         # creating a symlink pointing to the most recently delivered build
         util.replace_link(latestpath, id)
-        logger.info("done. see %s" % (topdir))
+        logger.info("done, see %s" % (topdir))
 
     def _get_root(self, id, fresh, logstore, interactive):
         if fresh:
