@@ -864,6 +864,8 @@ class TmpfsChrootManager(CompressedChrootManager):
 
     def deactivate_root(self, root):
         self.su().umount_tmpfs(root.path)
+        # it should be empty:
+        self.su().destroy_root(root.path)
 
     def destroy(self, root, interactive):
         "Nothing to do"
