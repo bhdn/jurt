@@ -880,6 +880,9 @@ class TmpfsChrootManager(CompressedChrootManager):
         cmd.append(path)
         return cmd
 
+    def list_roots(self):
+        return iter([])
+
 class BtrfsChrootManager(CachedManagerMixIn, ChrootRootManager):
 
     def __init__(self, suwrapper, rootconf, globalconf):
