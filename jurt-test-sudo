@@ -21,9 +21,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 from jurtlib.command import JurtCommand
-from jurtlib.facade import JurtFacade
 
-class Showrc(JurtCommand):
+class TestSudo(JurtCommand):
 
     descr = "Dumps configuration values"
 
@@ -31,4 +30,4 @@ class Showrc(JurtCommand):
         for status in self.jurt.check_permissions():
             print status
 
-Showrc().main()
+TestSudo().main()

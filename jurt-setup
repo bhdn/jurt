@@ -36,7 +36,7 @@ Currently it only sets up sudoers configuration.
 SUDOERS_LINE = "%(target)s ALL=(ALL) NOPASSWD: %(command)s\n"
 JURT_COMMAND = "/usr/sbin/jurt-root-command"
 
-class Showrc(JurtCommand):
+class Setup(JurtCommand):
 
     descr = ""
 
@@ -73,4 +73,4 @@ class Showrc(JurtCommand):
         print "done. just be sure you are effective member of the group "\
 		"%s before running jurt commands" % (group)
 
-Showrc().main()
+Setup().main()
