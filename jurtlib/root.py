@@ -358,6 +358,7 @@ class ChrootRootManager(RootManager):
         self.devs = self._parse_devs(rootconf.chroot_devs)
         self.maxrootage = self._parse_max_root_age(rootconf.root_max_age)
         self.remountcmd = shlex.split(rootconf.chroot_remount_wrapper_command)
+        self.targetname = rootconf.target_name
 
     def su(self):
         return self.suwrapper
@@ -775,7 +776,6 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
                 globalconf)
         self.compress_command = shlex.split(rootconf.chroot_compress_command)
         self.decompress_command = shlex.split(rootconf.chroot_decompress_command)
-        self.targetname = rootconf.target_name
         self.cachedir = rootconf.chroot_cache_dir
         self.cacheext = rootconf.chroot_cache_ext
 
