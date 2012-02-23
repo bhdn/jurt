@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -20,78 +20,6 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-import sys
-from jurtlib.command import JurtCommand, CliError
-
-DESCR = """Builds a set of packages
-
-Built packages will be added into a temporary repository so that they can
-be used as build dependencies by those that are processed afterwards.
-
-To list the targets, use jurt-list-targets.
-
-To see the configuration used by jurt, use jurt-showrc.
-
-Also, jurt-root-command should be able to use sudo for running commands as
-root. Run jurt-test-sudo for checking whether it is properly configured.
-"""
-
-class Build(JurtCommand):
-
-    usage = "%prog -t TARGET file.src.rpm..."
-    descr = DESCR
-
-    def init_parser(self, parser):
-        JurtCommand.init_parser(self, parser)
-        parser.add_option("-t", "--target", type="string",
-                help="Target packages are built for")
-        parser.add_option("-b", "--stop", default=None, metavar="STAGE",
-                help="Stop at build stage STAGE and drops into a shell")
-        parser.add_option("-s", "--showlog",
-                action="store_true", default=False,
-                help="Show the (also logged) output of build process")
-        parser.add_option("-k", "--keeproot", default=False,
-                action="store_true",
-                help="Do not remove the root after build (useful to use "
-                    "with -l)")
-        parser.add_option("-i", "--id", default=None,
-                help=("Enter in an (supposedly) existing root named "
-                    "ID (see -l)"))
-        parser.add_option("-l", "--latest", default=False,
-                action="store_true",
-                help=("Use the latest created root (when -k is used "
-                      "beforehand)"))
-        parser.add_option("-n", "--newid", default=None, metavar="ID",
-                help=("Set the name of the root to be created "
-                    "(so that it can be reused with -i ID)"))
-        parser.add_option("-d", "--duration", default=None, type="int",
-                metavar="SECS",
-                help=("Limit in seconds of build time (when exceeded the "
-                     "build task is killed with SIGTERM)"))
-
-    def run(self):
-        if not self.args:
-            raise CliError, "no source packages provided (--help?)"
-        if self.opts.showlog:
-            outputfile = sys.stdout
-        else:
-            outputfile = None
-        if sum((self.opts.latest, bool(self.opts.id),
-                bool(self.opts.newid))) > 1:
-            raise CliError, "-i, -n and -l cannot be used together"
-        fresh = True
-        id = None
-        if self.opts.id:
-            fresh = False
-            id = self.opts.id
-        if self.opts.latest:
-            id = "latest"
-            fresh = False
-        elif self.opts.newid:
-            id = self.opts.newid
-        # else: fresh = True
-        self.jurt.build(self.args, self.opts.target, id, fresh,
-                timeout=self.opts.duration, stage=self.opts.stop,
-                outputfile=outputfile, keeproot=self.opts.keeproot)
+from jurtlib.command import Build
 
 Build().main()

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -20,31 +20,6 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-from jurtlib.command import JurtCommand, CliError
-
-class Put(JurtCommand):
-
-    descr = "Copies files into a root"
-    usage = "%prog [opts] FILES.."
-
-    def init_parser(self, parser):
-        JurtCommand.init_parser(self, parser)
-        parser.add_option("-t", "--target", type="string",
-                help="Target rooot name (jurt-list-targets for a list)")
-        parser.add_option("-i", "--id", default=None,
-                help=("Enter in an (supposedly) existing root named "
-                    "ID (see -l)"))
-        parser.add_option("-l", "--latest", default=True,
-                action="store_true",
-                help="Use the latest created root (default)")
-
-    def run(self):
-        if not self.args:
-            raise CliError, "you must provide some files to be copied"
-        if self.opts.id:
-            id = self.opts.id
-        else:
-            id = "latest"
-        self.jurt.put(self.args, targetname=self.opts.target, id=id)
+from jurtlib.command import Put
 
 Put().main()

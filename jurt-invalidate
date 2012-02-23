@@ -20,26 +20,6 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-from jurtlib.command import JurtCommand, CliError
-
-DESCR = """\
-Cleans the root cache for a given build target.
-
-In case the target name is ommited, the default build target will be used.
-
-Use jurt list-targets to enumerate the targets available.
-"""
-
-class Invalidate(JurtCommand):
-
-    usage = "%prog [TARGET]"
-    descr = DESCR
-
-    def run(self):
-        if not self.args:
-            self.jurt.invalidate(None)
-        else:
-            for targetname in self.args:
-                self.jurt.invalidate(targetname)
+from jurtlib.command import Invalidate
 
 Invalidate().main()

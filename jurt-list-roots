@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -20,38 +20,6 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-from jurtlib.command import JurtCommand, CliError
-
-DESCR = """\
-Lists roots available to be used on jurt-shell -i <ID>
-
-The output is in the format FLAGS NAME.
-
-FLAGS can be:
-
- b      indicates that it was used for non-interactive build (and thus
-        can only be reused for that purpuse)
- i      it can be used for interactive build or shell (jurt-build -b or
-        jurt-shell)
- k      the root is marked to not be destroyed by jurt-clean
- o      the root is not used and can be destroyed
- a      the root is active
- l      the root can be referred with -l on the commands that support this
-        option.
-"""
-
-class ListRoots(JurtCommand):
-
-    descr = DESCR
-
-    def init_parser(self, parser):
-        JurtCommand.init_parser(self, parser)
-
-    def run(self):
-        for name, kind, state, latest in self.jurt.list_roots():
-            flag = kind[0] + state[0]
-            if latest:
-                flag += "l"
-            print "%s\t%s" % (flag, name)
+from jurtlib.command import ListRoots
 
 ListRoots().main()

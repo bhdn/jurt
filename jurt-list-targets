@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Bogdano Arendartchuk <bogdano@mandriva.com.br>
+# Copyright (c) 2011,2012 Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
 # Written by Bogdano Arendartchuk <bogdano@mandriva.com.br>
 #
@@ -20,17 +20,6 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-from jurtlib.command import JurtCommand
-
-class ListTargets(JurtCommand):
-
-    descr = "List all build targets"
-
-    def run(self):
-        for target, default in self.jurt.target_names():
-            if default:
-                print target, "(default)"
-            else:
-                print target
+from jurtlib.command import ListTargets
 
 ListTargets().main()
