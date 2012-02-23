@@ -19,6 +19,13 @@
 # along with Jurt Build Bot; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+"""
+Most of the implementation of jurt
+
+In case you want to use jurtlib, see how JurtCommand is implemented on
+jurtlib.command. Also take a look at jurtlib.facade.
+"""
+
 import logging
 log = logging.getLogger("jurt")
 
