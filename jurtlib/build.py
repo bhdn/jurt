@@ -72,6 +72,7 @@ class Builder:
         self.deliverylogext = buildconf.delivery_log_file_ext
         self.packagesdirname = buildconf.packages_dir_name
         self.latestname = buildconf.latest_home_link_name
+        self.statusfilename = buildconf.build_status_file
         self.logsdirname = "logs"
         self.builtdirname = "built"
         try:
@@ -207,6 +208,19 @@ class Builder:
         tofile.close()
         fromfile.close()
 
+    def _write_status_file(self, results, topdir):
+        statuspath = os.path.join(topdir, self.statusfilename)
+        if all(result.success for result in results):
+            statusline = "success\n"
+        else:
+            statusline = "failed\n"
+        try:
+            with open(statuspath, "w") as f:
+                f.write(statusline)
+        except EnvironmentError, e:
+            raise BuildError, ("failed to write the build status "
+                    "file: %s" % (e))
+
     def deliver(self, id, buildresults, logstore):
         # setting up base delivery directory
         topdir = os.path.join(self.deliverydir, id)
@@ -215,6 +229,7 @@ class Builder:
         create_dirs(topdir)
         id, subidpaths = logstore.logs()
         # copying and compressing log files
+        self._write_status_file(buildresults, topdir)
         for subid, path in subidpaths:
             subtop = os.path.join(topdir, subid, self.logsdirname)
             create_dirs(subtop)
@@ -223,9 +238,10 @@ class Builder:
             self._pipe_through(path, self.logcompresscmd, destpath)
         # copying (or hardlinking) the built packages
         for result in buildresults:
+            sourcetopdir = os.path.join(topdir, result.sourceid)
+            self._write_status_file((result,), sourcetopdir)
             for path in result.builtpaths:
-                pkgdestdir = os.path.join(topdir, result.sourceid,
-                        self.packagesdirname)
+                pkgdestdir = os.path.join(sourcetopdir, self.packagesdirname)
                 create_dirs(pkgdestdir)
                 destpath = os.path.join(pkgdestdir, os.path.basename(path))
                 if util.same_partition(pkgdestdir, path):

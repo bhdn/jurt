@@ -70,6 +70,7 @@ builder-uid-doc = note the builder-uid option is not used when using
                   is set to any-available, it will use a random UID that is
                   available (ie. not shown by 'getend passwd')
 max-uid = 2147483647
+build-status-file = status
 chroot-spool-dir = /build-spool/
 built-dir-name = packages
 delivery-dir = ~/jurt/
