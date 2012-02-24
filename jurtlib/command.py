@@ -207,6 +207,10 @@ root. Run jurt-test-sudo for checking whether it is properly configured.
                 action="store_true",
                 help=("Use the latest created root (when -k is used "
                       "beforehand)"))
+        parser.add_option("-K", "--keep-building", default=False,
+                action="store_true",
+                help=("Keep building the following packages when the "
+                    "preceding one has failed (jurt aborts by default)."))
         parser.add_option("-n", "--newid", default=None, metavar="ID",
                 help=("Set the name of the root to be created "
                     "(so that it can be reused with -i ID)"))
@@ -238,7 +242,8 @@ root. Run jurt-test-sudo for checking whether it is properly configured.
         # else: fresh = True
         self.jurt.build(self.args, self.opts.target, id, fresh,
                 timeout=self.opts.duration, stage=self.opts.stop,
-                outputfile=outputfile, keeproot=self.opts.keeproot)
+                outputfile=outputfile, keeproot=self.opts.keeproot,
+                keepbuilding=self.opts.keep_building)
 
 class Clean(JurtCommand):
 

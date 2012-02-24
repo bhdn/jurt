@@ -75,11 +75,12 @@ class JurtFacade:
         return target
 
     def build(self, paths, targetname=None, id=None, fresh=False,
-            stage=None, timeout=None, outputfile=None, keeproot=False):
+            stage=None, timeout=None, outputfile=None, keeproot=False,
+            keepbuilding=False):
         """Builds a set of packages"""
         target = self.get_target(targetname, id, interactive=bool(stage))
         target.build(paths, id, fresh, stage, timeout, outputfile,
-                keeproot)
+                keeproot, keepbuilding)
 
     def target_names(self):
         defname = self.config.jurt.default_target

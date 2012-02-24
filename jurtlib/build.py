@@ -251,7 +251,7 @@ class Builder:
         return root
 
     def build(self, id, fresh, paths, logstore, stage=None, timeout=None,
-            keeproot=False):
+            keeproot=False, keepbuilding=False):
         spool = self.create_spool(id)
         # TODO ^^^^^ think about unintended spool reuse
         results = []
@@ -263,6 +263,8 @@ class Builder:
                     logstore.subpackage(sourceid), spool, stage, timeout,
                     keeproot)
             results.append(result)
+            if not result.success and not keepbuilding:
+                break
         logstore.done()
         self.deliver(id, results, logstore)
         return results
