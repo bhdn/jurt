@@ -66,7 +66,7 @@ class BaseWrapper(SectionWrapper):
     def __getattr__(self, name):
         pass
 
-class Config:
+class Config(object):
 
     _section = None
     _config = None
@@ -74,7 +74,6 @@ class Config:
 
     def __init__(self):
         self._config = ConfigParser.ConfigParser()
-        self.parse(defaults.CONFIG_DEFAULTS)
 
     def config_object(self):
         return self._config
@@ -121,6 +120,10 @@ class Config:
 
 
 class JurtConfig(Config):
+
+    def __init__(self):
+        super(JurtConfig, self).__init__()
+        self.parse(defaults.CONFIG_DEFAULTS)
     
     def targets(self):
         # looks for [target somename] sections
