@@ -94,10 +94,15 @@ class Config:
                 nicename = name.replace("_", "-")
                 section = self._sections[nicename]
             except KeyError:
-                if name not in self._config.sections():
+                chosen = None
+                if name in self._config.sections():
+                    chosen = name
+                elif nicename in self._config.sections():
+                    chosen = nicename
+                else:
                     raise AttributeError, name
-                section = SectionWrapper(self, name)
-                self._sections[name] = section
+                section = SectionWrapper(self, chosen)
+                self._sections[chosen] = section
         return section
 
     def get_section(self, name, defaultsname=None):
