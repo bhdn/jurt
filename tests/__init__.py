@@ -12,7 +12,7 @@ class Test(TestCase):
         #
 
         os.makedirs(self.spooldir)
-        shutil.copytree(self.testrepoorig_dir, self.testrepo_dir)
+        #shutil.copytree(self.testrepoorig_dir, self.testrepo_dir)
 
     def tearDown(self):
         shutil.rmtree(self.spooldir)
