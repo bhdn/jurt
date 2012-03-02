@@ -20,6 +20,7 @@ foo = multi-
   line configuration 
   option
 it-sucks-but = it ; ignores semicolons
+empty = 
 """
         config = self.config_class()
         config.parse(contents)
@@ -28,6 +29,7 @@ it-sucks-but = it ; ignores semicolons
         self.assertEquals(config.second_section.foo, ("multi-\nline "
             "configuration\noption"))
         self.assertEquals(config.second_section.it_sucks_but, "it")
+        self.assertEquals(config.second_section.empty, "")
 
 class TestJurtConfig(TestConfig):
 
