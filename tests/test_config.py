@@ -39,3 +39,29 @@ class TestJurtConfig(TestConfig):
         self.assertIsInstance(config.root, SectionWrapper)
         self.assertTrue("any target" in config.config_object().sections(), 
                 "no section 'any target' defined")
+
+    def test_target_conf(self):
+        contents = """\
+[any target]
+foo = any-bar
+zlarg = klakla
+
+[target first]
+foo = bar
+bar = baz
+
+[target second]
+foo = second-bar
+bar = second-baz
+"""
+        config = self.config_class()
+        config.parse(contents)
+        targets = list(config.targets())
+        self.assertEquals(targets[0][1].target_name, "first")
+        self.assertEquals(targets[0][1].foo, "bar")
+        self.assertEquals(targets[0][1].bar, "baz")
+        self.assertEquals(targets[0][1].zlarg, "klakla")
+        self.assertEquals(targets[1][1].target_name, "second")
+        self.assertEquals(targets[1][1].foo, "second-bar")
+        self.assertEquals(targets[1][1].bar, "second-baz")
+        self.assertEquals(targets[1][1].zlarg, "klakla")
