@@ -16,3 +16,18 @@ class Test(TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.spooldir)
+
+    def sample_config(self):
+        from jurtlib.config import JurtConfig
+        contents = """\
+[target first]
+foo = bar
+bar = baz
+
+[target second]
+foo = second-bar
+bar = second-baz
+"""
+        config = JurtConfig()
+        config.parse(contents)
+        return config, tuple(config.targets())
