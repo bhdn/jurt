@@ -65,10 +65,11 @@ class Config(object):
 
     _section = None
     _config = None
-    _sections = {}
+    _sections = None
 
     def __init__(self):
         self._config = ConfigParser.ConfigParser()
+        self._sections = {}
 
     def config_object(self):
         return self._config
