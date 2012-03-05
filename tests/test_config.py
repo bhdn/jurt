@@ -52,6 +52,19 @@ bar = baz
         self.assertTrue("; it ignores semicolons" not in dump) # meh
         self.assertTrue("empty = " in dump)
 
+    def test_changing_configuration_values(self):
+        contents = """\
+[foo]
+a = something
+b = not something
+"""
+        config = self.config_class()
+        config.parse(contents)
+        config.foo.a = "now with a different value"
+        self.assertEquals(config.foo.a, "now with a different value")
+        config.foo.c = "a new option"
+        self.assertEquals(config.foo.c, "a new option")
+
 class TestJurtConfig(TestConfig):
 
     config_class = JurtConfig
@@ -93,16 +106,3 @@ bar = second-baz
         self.assertEquals(targets[1][1].foo, "second-bar")
         self.assertEquals(targets[1][1].bar, "second-baz")
         self.assertEquals(targets[1][1].zlarg, "klakla")
-
-    def test_changing_configuration_values(self):
-        contents = """\
-[foo]
-a = something
-b = not something
-"""
-        config = self.config_class()
-        config.parse(contents)
-        config.foo.a = "now with a different value"
-        self.assertEquals(config.foo.a, "now with a different value")
-        config.foo.c = "a new option"
-        self.assertEquals(config.foo.c, "a new option")
