@@ -2,15 +2,7 @@ import tests
 
 from jurtlib.config import Config, JurtConfig, SectionWrapper
 
-class TestConfig(tests.Test):
-
-    config_class = Config
-
-    def test_create_config(self):
-        config = self.config_class()
-
-    def test_parse_and_config_mapping(self):
-        contents = """\
+SECTIONS_TEST = """\
 [first]
 foo = bar
 bar = baz
@@ -22,8 +14,17 @@ foo = multi-
 it-sucks-but = it ; ignores semicolons
 empty = 
 """
+
+class TestConfig(tests.Test):
+
+    config_class = Config
+
+    def test_create_config(self):
         config = self.config_class()
-        config.parse(contents)
+
+    def test_parse_and_config_mapping(self):
+        config = self.config_class()
+        config.parse(SECTIONS_TEST)
         self.assertEquals(config.first.foo, "bar")
         self.assertEquals(config.first.bar, "baz")
         self.assertEquals(config.second_section.foo, ("multi-\nline "
@@ -35,6 +36,22 @@ empty =
         self.assertRaises(AttributeError, getattr, config.first,
             "another_missing_attribute")
 
+    def test_repr(self):
+        config = self.config_class()
+        config.parse(SECTIONS_TEST)
+        first = """\
+[first]
+foo = bar
+bar = baz
+"""
+        dump = repr(config)
+        self.assertTrue(first in dump)
+        self.assertTrue("[second-section]" in dump)
+        self.assertTrue("foo = multi-" in dump)
+        self.assertTrue("line configuration" in dump)
+        self.assertTrue("; it ignores semicolons" not in dump) # meh
+        self.assertTrue("empty = " in dump)
+
 class TestJurtConfig(TestConfig):
 
     config_class = JurtConfig
@@ -45,6 +62,11 @@ class TestJurtConfig(TestConfig):
         self.assertIsInstance(config.root, SectionWrapper)
         self.assertTrue("any target" in config.config_object().sections(), 
                 "no section 'any target' defined")
+
+    def test_repr(self):
+        # don't need to test it for JurtConfig as it loads the default
+        # configuration values
+        pass
 
     def test_target_conf(self):
         contents = """\
