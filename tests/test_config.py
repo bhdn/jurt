@@ -1,4 +1,5 @@
 import tests
+import os
 
 from jurtlib.config import Config, JurtConfig, SectionWrapper
 
@@ -64,6 +65,27 @@ b = not something
         self.assertEquals(config.foo.a, "now with a different value")
         config.foo.c = "a new option"
         self.assertEquals(config.foo.c, "a new option")
+
+    def test_load(self):
+        contents = """\
+[new-section]
+zlurg = zlarg
+"""
+        path = os.path.join(self.spooldir, "test.conf")
+        with open(path, "w") as f:
+            f.write(contents)
+        config = self.config_class()
+        config.load(path)
+        self.assertEquals(config.new_section.zlurg, "zlarg")
+
+    def test_merge(self):
+        config = self.config_class()
+        config.parse(SECTIONS_TEST)
+        config.merge({"first": {"foo": "new-bar", "new-option": "bla"},
+            "second-section": {"empty": "not anymore"}})
+        self.assertEquals(config.first.foo, "new-bar")
+        self.assertEquals(config.first.new_option, "bla")
+        self.assertEquals(config.second_section.empty, "not anymore")
 
 class TestJurtConfig(TestConfig):
 
