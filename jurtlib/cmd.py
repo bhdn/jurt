@@ -26,14 +26,7 @@ from jurtlib import Error
 class CommandError(Error):
     pass
 
-def run(args, error=False, stderr=False):
-    if stderr:
-        stderr = subprocess.STDOUT
-    else:
-        if os.path.exists(os.devnull):
-            stderr = open(os.devnull)
-        else:
-            stderr = None
+def run(args, error=False):
     proc = subprocess.Popen(args=args, shell=False,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     proc.wait()
