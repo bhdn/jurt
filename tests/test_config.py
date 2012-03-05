@@ -30,6 +30,10 @@ empty =
             "configuration\noption"))
         self.assertEquals(config.second_section.it_sucks_but, "it")
         self.assertEquals(config.second_section.empty, "")
+        self.assertRaises(AttributeError, getattr, config,
+            "random_section")
+        self.assertRaises(AttributeError, getattr, config.first,
+            "another_missing_attribute")
 
 class TestJurtConfig(TestConfig):
 

@@ -53,7 +53,7 @@ class SectionWrapper(object):
                 if self._defaultssec is not None:
                     return getattr(self._defaultssec, name)
                 else:
-                    raise
+                    raise AttributeError(name)
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
