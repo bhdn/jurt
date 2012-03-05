@@ -61,11 +61,6 @@ class SectionWrapper(object):
         else:
             self._config.set(self._section, name, value)
 
-class BaseWrapper(SectionWrapper):
-
-    def __getattr__(self, name):
-        pass
-
 class Config(object):
 
     _section = None
