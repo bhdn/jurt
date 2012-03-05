@@ -39,7 +39,7 @@ def run(args, error=False, stderr=False):
     proc.wait()
     output = proc.stdout.read()
     if proc.returncode != 0 and error:
-        cmdline = subprocess.list2cmdline(cmd)
+        cmdline = subprocess.list2cmdline(args)
         raise CommandError, ("command failed: %s\n%s\n" %
                 (cmdline, output))
     return output, proc.returncode
