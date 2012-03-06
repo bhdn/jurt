@@ -13,7 +13,8 @@ def runtests():
     failure_count = 0                                                                                                 
     test_count = 0                                                                                                    
     for filename in filenames:                                                                                        
-        if filename != "__init__.py" and filename.endswith(".py"):                                                    
+        if (filename != "__init__.py" and filename.endswith(".py")
+                and filename.startswith("test_")):
             modname = tests.__name__+ "." + filename[:-3]                                                             
             module = __import__(modname, None, None, [modname])                                                       
             testcase = loader.loadTestsFromModule(module)                                                             
