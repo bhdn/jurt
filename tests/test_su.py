@@ -125,6 +125,12 @@ class TestJurtRootWrapper(tests.Test):
         su.btrfs_snapshot("/foo/bar/baz", "/foo/bar/new-baz")
         self._expect("--type btrfssnapshot --target first "
                 "/foo/bar/baz /foo/bar/new-baz")
+        su.btrfs_create("/foo/bar/baz")
+        self._expect("--type btrfscreate --target first "
+                "/foo/bar/baz")
+        su.destroy_root("/foo/bar/baz")
+        self._expect("--type destroyroot --target first "
+                "/foo/bar/baz")
 
     def test_test_agent_failed(self):
         config, sections = self.sample_config()
