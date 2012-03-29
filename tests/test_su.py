@@ -2,6 +2,7 @@ import tests
 import subprocess
 from os.path import join
 
+from jurtlib import SetupError
 from jurtlib.config import JurtConfig
 from jurtlib.su import JurtRootWrapper, AgentError
 
@@ -138,3 +139,10 @@ class TestJurtRootWrapper(tests.Test):
         suconf.sudo_command = "false"
         su = JurtRootWrapper("first", suconf, config)
         self.assertRaises(AgentError, su.test_sudo)
+
+    def test_test_agent_failed_2(self):
+        config, sections = self.sample_config()
+        suconf = sections[0][1]
+        suconf.sudo_command = "missing"
+        su = JurtRootWrapper("first", suconf, config)
+        self.assertRaises(SetupError, su.test_sudo)

@@ -25,7 +25,7 @@ import select
 import subprocess
 import logging
 import shlex
-from jurtlib import Error, CommandError
+from jurtlib import Error, CommandError, SetupError
 from jurtlib.registry import Registry
 from cStringIO import StringIO
 
@@ -88,9 +88,14 @@ class JurtRootWrapper(SuWrapper):
         cmd.append("--agent")
         cmd.extend(("--cookie", self.agentcookie))
         logger.debug("starting the superuser agent with %s", cmd)
-        proc = subprocess.Popen(args=cmd, shell=False,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE, bufsize=0)
+        try:
+            proc = subprocess.Popen(args=cmd, shell=False,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    stdin=subprocess.PIPE, bufsize=0)
+        except OSError, e:
+            cmdline = subprocess.list2cmdline(cmd)
+            raise SetupError, ("failed to execute the superuser "
+                    "agent %r: %s" % (cmdline, e))
         self.agentcmdline = cmd
         self.agentproc = proc
         self.agentrunning = True
