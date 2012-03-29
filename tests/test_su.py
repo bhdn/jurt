@@ -4,7 +4,7 @@ from os.path import join
 
 from jurtlib import SetupError
 from jurtlib.config import JurtConfig
-from jurtlib.su import JurtRootWrapper, AgentError
+from jurtlib.su import JurtRootWrapper, AgentError, SudoNotSetup
 
 class TestJurtRootWrapper(tests.Test):
 
@@ -138,9 +138,9 @@ class TestJurtRootWrapper(tests.Test):
         suconf = sections[0][1]
         suconf.sudo_command = "false"
         su = JurtRootWrapper("first", suconf, config)
-        self.assertRaises(AgentError, su.test_sudo)
+        self.assertRaises(SudoNotSetup, su.test_sudo)
 
-    def test_test_agent_failed_2(self):
+    def test_sudo_not_setup(self):
         config, sections = self.sample_config()
         suconf = sections[0][1]
         suconf.sudo_command = "missing"

@@ -328,8 +328,8 @@ class JurtRootWrapper(SuWrapper):
     def test_sudo(self, interactive=True):
         try:
             return self._exec_wrapper("test", [])
-        except CommandError, e:
-            raise SudoNotSetup
+        except AgentError, e:
+            raise SudoNotSetup, str(e)
 
     def btrfs_snapshot(self, from_, to):
         logger.debug("creating btrfs snapshot from %s to %s" % (from_, to))
