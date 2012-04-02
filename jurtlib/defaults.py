@@ -51,10 +51,6 @@ logger-type = default
 
 jurt-base-dir = /var/spool/jurt
 roots-path = %(jurt-base-dir)s/chroots/
-active-roots-dir = %(roots-path)s/active/
-temp-roots-dir = %(roots-path)s/temp/
-old-roots-dir = %(roots-path)s/old/
-keep-roots-dir = %(roots-path)s/keep/
 tmpfs-roots-dir = %(roots-path)s/tmpfs/
 builds-dir = %(jurt-base-dir)s/builds/
 spool-dir = %(builds-dir)s/spools/

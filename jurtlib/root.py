@@ -342,10 +342,6 @@ class ChrootRootManager(RootManager):
         self.arch = rootconf.arch
         self.archmap = self._parse_arch_map(rootconf.arch_map)
         self.allowshell = parse_bool(rootconf.allow_interactive_shell)
-        self.keepstatedir = rootconf.keep_roots_dir
-        self.oldstatedir = rootconf.old_roots_dir
-        self.tempstatedir = rootconf.temp_roots_dir
-        self.activestatedir = rootconf.active_roots_dir
         self.latestsuffix_build = rootconf.latest_build_suffix
         self.latestsuffix_interactive = rootconf.latest_interactive_suffix
         self.putcopycmd = shlex.split(rootconf.put_copy_command)
@@ -459,16 +455,16 @@ class ChrootRootManager(RootManager):
         return self._state_path(self._state_to_dir(state), name)
 
     def _active_path(self, name):
-        return self._state_path(self.activestatedir, name)
+        return self._state_path(self._state_to_dir(Active), name)
 
     def _temp_path(self, name):
-        return self._state_path(self.tempstatedir, name)
+        return self._state_path(self._state_to_dir(Temp), name)
 
     def _keep_path(self, name):
-        return self._state_path(self.keepstatedir, name)
+        return self._state_path(self._state_to_dir(Keep), name)
 
     def _old_path(self, name):
-        return self._state_path(self.oldstatedir, name)
+        return self._state_path(self._state_to_dir(Old), name)
 
     def _state_to_dir(self, state):
         return STATE_NAMES[state]
