@@ -338,6 +338,7 @@ class ChrootRootManager(RootManager):
         self.donedir = rootconf.success_dir
         self.faildir = rootconf.failure_dir
         self.copyfiles = shlex.split(rootconf.root_copy_files)
+        self.suforpostcmd = shlex.split(rootconf.su_for_post_command)
         self.postcmd = rootconf.root_post_command.strip()
         self.arch = rootconf.arch
         self.archmap = self._parse_arch_map(rootconf.arch_map)
@@ -354,6 +355,10 @@ class ChrootRootManager(RootManager):
         self.devs = self._parse_devs(rootconf.chroot_devs)
         self.maxrootage = self._parse_max_root_age(rootconf.root_max_age)
         self.remountcmd = shlex.split(rootconf.chroot_remount_wrapper_command)
+        self.chrootcmd = shlex.split(rootconf.chroot_command)
+        self.sucmd = shlex.split(rootconf.su_command)
+        self.sudointcmd = shlex.split(rootconf.sudo_interactive_shell_command)
+        self.intshellcmd = shlex.split(rootconf.interactive_shell_command)
         self.targetname = rootconf.target_name
 
     def su(self):
@@ -381,7 +386,11 @@ class ChrootRootManager(RootManager):
 
     # run as root
     def post_command(self):
-        return self.postcmd
+        return self.postcmd[:]
+
+    # run as root
+    def su_for_post_command(self):
+        return self.suforpostcmd[:]
 
     # run as root
     def setarch_command(self, from_, to):
@@ -741,6 +750,18 @@ class ChrootRootManager(RootManager):
 
     def remount_wrapper_command(self):
         return self.remountcmd
+
+    def chroot_command(self):
+        return self.rootcmd[:]
+
+    def su_command(self):
+        return self.sucmd[:]
+
+    def sudo_interactive_shell_command(self):
+        return self.sudointcmd[:]
+
+    def interactive_shell_command(self):
+        return self.intshellcmd[:]
 
 class CachedManagerMixIn:
 

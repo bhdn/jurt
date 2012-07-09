@@ -146,6 +146,8 @@ rpm-topdir-subdirs = BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
 rpm-macros-file = ~/.rpmmacros
 
 root-copy-files = /etc/hosts /etc/resolv.conf
+su-command = /bin/su -l
+su-for-post-command = %(su-command)s -c
 root-post-command = passwd -l root; touch /jurt-root
 root-max-age = 14
 root-max-age-doc = Roots older than root-max-age (in days) can be removed by
@@ -186,23 +188,22 @@ mount-command = /bin/mount
 tmpfs-mount-command = %(mount-command)s -t tmpfs jurt-tmpfs
 tmpfs-umount-command = /bin/umount
 
+unshare-command = unshare --ipc --uts
+interactive-shell-term = xterm
+chroot-command = /usr/bin/env -i %(unshare-command)s -- /usr/sbin/chroot
+; note that newer sudo doesn't allow passing variables with spaces to
+; commands :(
+interactive-shell-command = /usr/bin/env "PS1=\u@$target-\w> "
+  "TERM=%(interactive-shell-term)s" /bin/bash
+sudo-interactive-shell-command = sudo -i
+
 #
 # used by jurt-root-command and jurt-setup
 #
 [root]
 
 adduser-command = /usr/sbin/adduser
-unshare-command = unshare --ipc --uts
-chroot-command = /usr/bin/env -i %(unshare-command)s -- /usr/sbin/chroot
-su-command = /bin/su -l
-su-for-post-command = %(su-command)s -c
-sudo-interactive-shell-command = sudo -i
 install-command = install
-interactive-shell-term = xterm
-; note that newer sudo doesn't allow passing variables with spaces to
-; commands :(
-interactive-shell-command = /usr/bin/env "PS1=\u@$target-\w> "
-  "TERM=%(interactive-shell-term)s" /bin/bash
 sudo-pm-allow-format = $user ALL=(ALL) NOPASSWD: $commands
 sudoers = /etc/sudoers
 jurt-group = jurt

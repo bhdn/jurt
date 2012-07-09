@@ -173,12 +173,14 @@ class RootCommand(JurtCommand):
                     allcmd.extend(self.target.rootmanager.setarch_command(sysarch,
                         self.opts.arch))
             self.target.rootmanager.check_valid_subdir(self.opts.root)
-            allcmd.extend(shlex.split(self.config.root.chroot_command))
+            chrootcmd = self.target.rootmanager.chroot_command()
+            allcmd.extend(chroot_command)
             allcmd.append(self.opts.root)
         if self.opts.remount:
             allcmd.extend(self.target.rootmanager.remount_wrapper_command())
         if self.opts.run_as:
-            allcmd.extend(shlex.split(self.config.root.su_command))
+            sucmd = self.target.rootmanager.su_command()
+            allcmd.extend(sucmd)
             allcmd.append(self.opts.run_as)
             allcmd.append("-c")
             allcmd.append(subprocess.list2cmdline(args)) # blarg
@@ -443,7 +445,7 @@ class RootCommand(JurtCommand):
     @_requires_target
     @_requires_root
     def cmd_postcommand(self):
-        args = shlex.split(self.config.root.su_for_post_command)
+        args = self.target.rootmanager.su_for_post_command()
         args.append(self.target.rootmanager.post_command())
         if not self.opts.dry_run:
             self._exec(args)
@@ -457,9 +459,9 @@ class RootCommand(JurtCommand):
         if not self.target.rootmanager.allows_interactive_shell():
             raise CliError, "interactive configuration not allowed "\
                     "for this target"
-        args = shlex.split(self.config.root.sudo_interactive_shell_command)
+        args = self.rootmanager.sudo_interactive_shell_command()
         args.extend(("-u", self.args[0]))
-        rawcmd = self.config.root.interactive_shell_command
+        rawcmd = self.config.rootmanager.interactive_shell_command()
         env = {"target": self.target.name, "root": self.opts.root}
         cmdline = template_expand(rawcmd, env)
         args.extend(shlex.split(cmdline))
