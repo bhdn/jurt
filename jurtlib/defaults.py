@@ -164,10 +164,10 @@ chroot-remount-wrapper-command =
 chroot-mountpoints-doc = list of virtual filesystems to be mounted when
      entering a chroot, it uses | to separate mountpoints and the fields
      are on the same order of fstab
-chroot-mountpoints = jurt-proc /proc proc defaults |
-    jurt-sysfs /sys sysfs defaults |
+chroot-mountpoints = jurt-sysfs /sys sysfs defaults |
     jurt-pts /dev/pts devpts defaults |
-    jurt-shm /dev/shm tmpfs defaults
+    jurt-shm /dev/shm tmpfs defaults |
+    jurt-proc /proc proc defaults
 chroot-binds =
 chroot-devs = /dev/null c 1 3 0666 |
    /dev/zero c 1 5 0666 |
