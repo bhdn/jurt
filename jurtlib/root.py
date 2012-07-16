@@ -793,7 +793,6 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
                 globalconf)
         self.compress_command = shlex.split(rootconf.chroot_compress_command)
         self.decompress_command = shlex.split(rootconf.chroot_decompress_command)
-        self.cachedir = rootconf.chroot_cache_dir
         self.cacheext = rootconf.chroot_cache_ext
 
     def _run(self, args, stdout=None, stdin=None):
@@ -821,8 +820,6 @@ class CompressedChrootManager(CachedManagerMixIn, ChrootRootManager):
         cachepath = self._cache_path(interactive)
         if not os.path.exists(cachepath):
             logger.debug("%s not found, creating new root" % (cachepath))
-            if not os.path.exists(self.cachedir):
-                self.su().mkdir(self.cachedir)
             chroot = ChrootRootManager.create_new(self, name,
                     packagemanager, repos, logstore, interactive)
             # suwrapper already takes care of temporary naming
