@@ -752,7 +752,7 @@ class ChrootRootManager(RootManager):
         return self.remountcmd
 
     def chroot_command(self):
-        return self.rootcmd[:]
+        return self.chrootcmd[:]
 
     def su_command(self):
         return self.sucmd[:]
