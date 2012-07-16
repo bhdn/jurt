@@ -358,7 +358,7 @@ class ChrootRootManager(RootManager):
         self.chrootcmd = shlex.split(rootconf.chroot_command)
         self.sucmd = shlex.split(rootconf.su_command)
         self.sudointcmd = shlex.split(rootconf.sudo_interactive_shell_command)
-        self.intshellcmd = shlex.split(rootconf.interactive_shell_command)
+        self.intshellcmd = rootconf.interactive_shell_command # template!
         self.targetname = rootconf.target_name
 
     def su(self):
@@ -761,7 +761,7 @@ class ChrootRootManager(RootManager):
         return self.sudointcmd[:]
 
     def interactive_shell_command(self):
-        return self.intshellcmd[:]
+        return self.intshellcmd
 
 class CachedManagerMixIn:
 
