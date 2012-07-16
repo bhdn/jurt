@@ -174,7 +174,7 @@ class RootCommand(JurtCommand):
                         self.opts.arch))
             self.target.rootmanager.check_valid_subdir(self.opts.root)
             chrootcmd = self.target.rootmanager.chroot_command()
-            allcmd.extend(chroot_command)
+            allcmd.extend(chrootcmd)
             allcmd.append(self.opts.root)
         if self.opts.remount:
             allcmd.extend(self.target.rootmanager.remount_wrapper_command())
