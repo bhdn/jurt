@@ -21,5 +21,4 @@
 #
 recursive-include jurtlib/ *.py
 include README LICENSE jurt.1 jurt.conf
-include jurt-suid.c
 include Makefile

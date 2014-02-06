@@ -16,26 +16,17 @@ Requires:	sudo
 %description
 Jurt is a package builder.
 
-%package suid
-Summary: a suid wrapper for jurt
-Group: Development/Python
-
-%description suid
-a suid wrapper for jurt
-
 %prep
 %setup -q
 
 %build
 %__python setup.py build
-%make jurt-suid 
 
 %install
 %__rm -rf %buildroot
 %__python setup.py install --root=%buildroot
 install -d %buildroot/%_sbindir/
 mv %buildroot/%_bindir/jurt-{root-command,setup} %buildroot/%_sbindir/
-mv jurt-suid %buildroot/%_sbindir/
 
 install -d %buildroot/%_var/spool/jurt/builds/
 install -m 1770 -d %buildroot/%_var/spool/jurt/builds/spools/
@@ -84,6 +75,3 @@ install -m 0770 -d %buildroot/%_var/spool/jurt/chroots/cached
 %attr(1770,root,jurt) %dir %_var/spool/jurt/chroots/keep/
 %_var/spool/jurt/chroots/cached/
 %{_mandir}/*/*
-
-%files suid
-%_sbindir/jurt-suid
